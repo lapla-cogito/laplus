@@ -1,6 +1,15 @@
 #include  <Uefi.h>
 #include  <Library/UefiLib.h>
 #include  "frame_buffer_config.hpp"
+#include  <Library/UefiLib.h>
+#include  <Library/UefiBootServicesTableLib.h>
+#include  <Library/PrintLib.h>
+#include  <Library/MemoryAllocationLib.h>
+#include  <Protocol/LoadedImage.h>
+#include  <Protocol/SimpleFileSystem.h>
+#include  <Protocol/DiskIo2.h>
+#include  <Protocol/BlockIo.h>
+#include  <Guid/FileInfo.h>
 
 //メモリーマップのリスト
 struct MemoryMap {
@@ -11,6 +20,62 @@ struct MemoryMap {
 	UINTN descriptor_size;
 	UINT32 descriptor_version;
 };
+
+//ピクセルの色
+struct PixelCol {
+	uint8_t r, g, b;
+};
+
+EFI_STATUS GetMemoryMap(struct MemoryMap* map) {
+	if (map->buffer == NULL) { return EFI_BUFFER_TOO_SMALL; }
+
+	map->map_size = map->buffer_size;
+	return gBS->GetMemoryMap(
+		&map->map_size,
+		(EFI_MEMORY_DESCRIPTOR*)map->buffer,
+		&map->map_key,
+		&map->descriptor_size,
+		&map->descriptor_version);
+}
+
+const CHAR16* GetMemoryTypeUnicode(EFI_MEMORY_TYPE type) {
+	switch (type) {
+	case EfiReservedMemoryType: return L"EfiReservedMemoryType";
+	case EfiLoaderCode: return L"EfiLoaderCode";
+	case EfiLoaderData: return L"EfiLoaderData";
+	case EfiBootServicesCode: return L"EfiBootServicesCode";
+	case EfiBootServicesData: return L"EfiBootServicesData";
+	case EfiRuntimeServicesCode: return L"EfiRuntimeServicesCode";
+	case EfiRuntimeServicesData: return L"EfiRuntimeServicesData";
+	case EfiConventionalMemory: return L"EfiConventionalMemory";
+	case EfiUnusableMemory: return L"EfiUnusableMemory";
+	case EfiACPIReclaimMemory: return L"EfiACPIReclaimMemory";
+	case EfiACPIMemoryNVS: return L"EfiACPIMemoryNVS";
+	case EfiMemoryMappedIO: return L"EfiMemoryMappedIO";
+	case EfiMemoryMappedIOPortSpace: return L"EfiMemoryMappedIOPortSpace";
+	case EfiPalCode: return L"EfiPalCode";
+	case EfiPersistentMemory: return L"EfiPersistentMemory";
+	case EfiMaxMemoryType: return L"EfiMaxMemoryType";
+	default: return L"InvalidMemoryType";
+	}
+}
+
+//return: 0 success, nonzero fail
+int WritePixel(const FrameBufferConfig& config,
+	int x, int y, const PixelCol& c) {
+	const int pixel_position = config.pixels_per_scan_line * y + x;
+
+	if (config.pixel_format == kPixelRGBesv8BitPerColor) {
+		uint8_t* p = &config.frame_buffer[pixel_position * 4];
+		p[0] = c.r, p[1] = c.g, p[2] = c.b;
+	}
+	else if (config.pixel_format == kPixelBGResv8BitPerColor) {
+		uint8_t* p = &config.frame_buffer[pixel_position * 4];
+		p[0] = c.b, p[1] = c.g, p[2] = c.r;
+	}
+	else { return -1; }
+	return 0;
+}
 
 EFI_STATUS EFIAPI UefiMain(
 	EFI_HANDLE image_handle,
@@ -102,38 +167,4 @@ EFI_STATUS EFIAPI UefiMain(
 
 	while (1);
 	return EFI_SUCCESS;
-}
-
-EFI_STATUS GetMemoryMap(struct MemoryMap* map) {
-	if (map->buffer == NULL) { return EFI_BUFFER_TOO_SMALL; }
-
-	map->map_size = map->buffer_size;
-	return gBS->GetMemoryMap(
-		&map->map_size,
-		(EFI_MEMORY_DESCRIPTOR*)map->buffer,
-		&map->map_key,
-		&map->descriptor_size,
-		&map->descriptor_version);
-}
-
-const CHAR16* GetMemoryTypeUnicode(EFI_MEMORY_TYPE type) {
-	switch (type) {
-	case EfiReservedMemoryType: return L"EfiReservedMemoryType";
-	case EfiLoaderCode: return L"EfiLoaderCode";
-	case EfiLoaderData: return L"EfiLoaderData";
-	case EfiBootServicesCode: return L"EfiBootServicesCode";
-	case EfiBootServicesData: return L"EfiBootServicesData";
-	case EfiRuntimeServicesCode: return L"EfiRuntimeServicesCode";
-	case EfiRuntimeServicesData: return L"EfiRuntimeServicesData";
-	case EfiConventionalMemory: return L"EfiConventionalMemory";
-	case EfiUnusableMemory: return L"EfiUnusableMemory";
-	case EfiACPIReclaimMemory: return L"EfiACPIReclaimMemory";
-	case EfiACPIMemoryNVS: return L"EfiACPIMemoryNVS";
-	case EfiMemoryMappedIO: return L"EfiMemoryMappedIO";
-	case EfiMemoryMappedIOPortSpace: return L"EfiMemoryMappedIOPortSpace";
-	case EfiPalCode: return L"EfiPalCode";
-	case EfiPersistentMemory: return L"EfiPersistentMemory";
-	case EfiMaxMemoryType: return L"EfiMaxMemoryType";
-	default: return L"InvalidMemoryType";
-	}
 }
