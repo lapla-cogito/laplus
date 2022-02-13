@@ -1,10 +1,91 @@
 #include<cstdint>
+#include<cstddef>
 
-//引数は順にブートローダーから渡されるフレームバッファの先頭アドレスとそのサイズ
-extern "C" void KernelMain(uint64_t frame_buffer_base, uint64_t frame_buffer_size) {//エントリーポイント
 
-	uint8_t* frame_buffer = reinterpret_cast<uint8_t*>(frame_buffer_base);//reinterpret_castはキャストの一種
-	for (uint64_t i = 0; i < frame_buffer_size; ++i) { frame_buffer[i] = i % 256; }
+//ピクセルの色
+struct PixelCol {
+	uint8_t r, g, b;
+};
 
+//演算子定義
+void* operator new(size_t size, void* buf) { return buf; }
+void operator delete(void* obj) noexcept {}
+//定義終了
+
+/*
+//return: 0 success, nonzero fail
+int WritePixel(const FrameBufferConfig& config,
+	int x, int y, const PixelCol& c) {
+	const int pixel_position = config.pixels_per_scan_line * y + x;
+
+	if (config.pixel_format == kPixelRGBesv8BitPerColor) {
+		uint8_t* p = &config.frame_buffer[pixel_position * 4];
+		p[0] = c.r, p[1] = c.g, p[2] = c.b;
+	}
+	else if (config.pixel_format == kPixelBGResv8BitPerColor) {
+		uint8_t* p = &config.frame_buffer[pixel_position * 4];
+		p[0] = c.b, p[1] = c.g, p[2] = c.r;
+	}
+	else { return -1; }
+	return 0;
+}
+*/
+
+
+class PixelWriter {
+private:
+	const FrameBufferConfig& config_;
+
+public:
+	PixelWriter(const FrameBufferConfig& config) :config_{ config } {}
+	virtual ~PixelWriter() = default;
+	virtual void write(int x, int y, const PixelCol& c) = 0;
+
+protected:
+	uint8_t* PixelAt(int x, int y) { retunr config_.frame_buffer + 4 * (config_.pixels_per_scan_line * y + x); }
+};
+
+//PixelWriterを継承したクラス群
+class RGBResv8bitPerColorPixelWriter :public PixelWriter {
+public:
+	using PixelWrier::PixelWriter;
+
+	virtual void write(int x, int y, PixelCol& c) override {
+		auto p = PixelAt(x, y);
+		p[0] = c.r, p[1] = c.g, p[2] = c.b;
+	}
+};
+
+class BGRResv8bitPerColorPixelWriter :public PixelWriter {
+public:
+	using PixelWrier::PixelWriter;
+
+	virtual void write(int x, int y, PixelCol& c) override {
+		auto p = PixelAt(x, y);
+		p[0] = c.b, p[1] = c.g, p[2] = c.r;
+	}
+};
+//クラス群終了
+
+extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {//エントリーポイント
+	switch (frame_buffer_config.pixel_format) {
+	case kPixelRGBResv8BitPerColor:
+		pixel_writer = new(pixel_writer_buf)
+			RGBResv8BitPerColorPixelWriter{ frame_buffer_config };
+		break;
+	case kPixelBGRResv8BitPerColor:
+		pixel_writer = new(pixel_writer_buf)
+			BGRResv8BitPerColorPixelWriter{ frame_buffer_config };
+		break;
+	}
+
+	for (int x = 0; x < frame_buffer_config.horizontal_resolution; ++x) {
+		for (int y = 0; y < frame_buffer_config.vertical_resolution; ++y) {
+			pixel_writer->Write(x, y, { 255, 255, 255 });
+		}
+	}
+	for (int x = 0; x < 200; ++x) {
+		for (int y = 0; y < 100; ++y) { pixel_writer->Write(x, y, { 0, 0, 255 }); }
+	}
 	while (1) __asm__("hlt");
 }

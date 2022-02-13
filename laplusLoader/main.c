@@ -23,10 +23,6 @@ struct MemoryMap {
 	UINT32 descriptor_version;
 };
 
-//ピクセルの色
-struct PixelCol {
-	uint8_t r, g, b;
-};
 
 EFI_STATUS GetMemoryMap(struct MemoryMap* map) {
 	if (map->buffer == NULL) { return EFI_BUFFER_TOO_SMALL; }
@@ -70,12 +66,9 @@ EFI_STATUS SaveMemoryMap(struct MemoryMap* map, EFI_FILE_PROTOCOL* file) {
 	CHAR8* header = "Index, Type, Type(name), PhysicalStart, NumberOfPages, Attribute\n";
 	len = AsciiStrLen(header);
 	status = file->Write(file, &len, header);
-	if (EFI_ERROR(status)) {
-		return status;
-	}
+	if (EFI_ERROR(status)) { return status; }
 
-	Print(L"map->buffer = %08lx, map->map_size = %08lx\n",
-		map->buffer, map->map_size);
+	Print(L"map->buffer = %08lx, map->map_size = %08lx\n", map->buffer, map->map_size);
 
 	EFI_PHYSICAL_ADDRESS iter;
 	int i;
@@ -90,9 +83,7 @@ EFI_STATUS SaveMemoryMap(struct MemoryMap* map, EFI_FILE_PROTOCOL* file) {
 			desc->PhysicalStart, desc->NumberOfPages,
 			desc->Attribute & 0xffffflu);
 		status = file->Write(file, &len, buf);
-		if (EFI_ERROR(status)) {
-			return status;
-		}
+		if (EFI_ERROR(status)) { return status; }
 	}
 
 	return EFI_SUCCESS;
@@ -110,9 +101,7 @@ EFI_STATUS OpenRootDir(EFI_HANDLE image_handle, EFI_FILE_PROTOCOL** root) {
 		image_handle,
 		NULL,
 		EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-	if (EFI_ERROR(status)) {
-		return status;
-	}
+	if (EFI_ERROR(status)) { return status; }
 
 	status = gBS->OpenProtocol(
 		loaded_image->DeviceHandle,
@@ -121,9 +110,7 @@ EFI_STATUS OpenRootDir(EFI_HANDLE image_handle, EFI_FILE_PROTOCOL** root) {
 		image_handle,
 		NULL,
 		EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-	if (EFI_ERROR(status)) {
-		return status;
-	}
+	if (EFI_ERROR(status)) { return status; }
 
 	return fs->OpenVolume(fs, root);
 }
@@ -140,9 +127,7 @@ EFI_STATUS OpenGOP(EFI_HANDLE image_handle,
 		NULL,
 		&num_gop_handles,
 		&gop_handles);
-	if (EFI_ERROR(status)) {
-		return status;
-	}
+	if (EFI_ERROR(status)) { return status; }
 
 	status = gBS->OpenProtocol(
 		gop_handles[0],
@@ -151,69 +136,13 @@ EFI_STATUS OpenGOP(EFI_HANDLE image_handle,
 		image_handle,
 		NULL,
 		EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-	if (EFI_ERROR(status)) {
-		return status;
-	}
+	if (EFI_ERROR(status)) { return status; }
 
 	FreePool(gop_handles);
 
 	return EFI_SUCCESS;
 }
 
-/*
-//return: 0 success, nonzero fail
-int WritePixel(const FrameBufferConfig& config,
-	int x, int y, const PixelCol& c) {
-	const int pixel_position = config.pixels_per_scan_line * y + x;
-
-	if (config.pixel_format == kPixelRGBesv8BitPerColor) {
-		uint8_t* p = &config.frame_buffer[pixel_position * 4];
-		p[0] = c.r, p[1] = c.g, p[2] = c.b;
-	}
-	else if (config.pixel_format == kPixelBGResv8BitPerColor) {
-		uint8_t* p = &config.frame_buffer[pixel_position * 4];
-		p[0] = c.b, p[1] = c.g, p[2] = c.r;
-	}
-	else { return -1; }
-	return 0;
-}
-*/
-
-
-class PixelWriter {
-private:
-	const FrameBufferConfig& config_;
-
-public:
-	PixelWriter(const FrameBufferConfig& config) :config_{ config } {}
-	virtual ~PixelWriter() = default;
-	virtual void write(int x, int y, const PixelCol& c) = 0;
-
-protected:
-	uint8_t* PixelAt(int x, int y) { retunr config_.frame_buffer + 4 * (config_.pixels_per_scan_line * y + x); }
-};
-
-//PixelWriterを継承したクラス群
-class RGBResv8bitPerColorPixelWriter :public PixelWriter {
-public:
-	using PixelWrier::PixelWriter;
-
-	virtual void write(int x, int y, PixelCol& c) override {
-		auto p = PixelAt(x, y);
-		p[0] = c.r, p[1] = c.g, p[2] = c.b;
-	}
-};
-
-class BGRResv8bitPerColorPixelWriter :public PixelWriter {
-public:
-	using PixelWrier::PixelWriter;
-
-	virtual void write(int x, int y, PixelCol& c) override {
-		auto p = PixelAt(x, y);
-		p[0] = c.b, p[1] = c.g, p[2] = c.r;
-	}
-};
-//クラス群終了
 
 
 EFI_STATUS EFIAPI UefiMain(
