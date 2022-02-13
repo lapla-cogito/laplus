@@ -60,6 +60,7 @@ const CHAR16* GetMemoryTypeUnicode(EFI_MEMORY_TYPE type) {
 	}
 }
 
+/*
 //return: 0 success, nonzero fail
 int WritePixel(const FrameBufferConfig& config,
 	int x, int y, const PixelCol& c) {
@@ -76,11 +77,50 @@ int WritePixel(const FrameBufferConfig& config,
 	else { return -1; }
 	return 0;
 }
+*/
+
+
+class PixelWriter {
+private:
+	const FrameBufferConfig& config_;
+
+public:
+	PixelWriter(const FrameBufferConfig& config) :config_{ config } {}
+	virtual ~PixelWriter() = default;
+	virtual void write(int x, int y, const PixelCol& c) = 0;
+
+protected:
+	uint8_t* PixelAt(int x, int y) { retunr config_.frame_buffer + 4 * (config_.pixels_per_scan_line * y + x); }
+};
+
+//PixelWriterを継承したクラス群
+class RGBResv8bitPerColorPixelWriter :public PixelWriter {
+public:
+	using PixelWrier::PixelWriter;
+
+	virtual void write(int x, int y, PixelCol& c) override {
+		auto p = PixelAt(x, y);
+		p[0] = c.r, p[1] = c.g, p[2] = c.b;
+	}
+};
+
+class BGRResv8bitPerColorPixelWriter :public PixelWriter {
+public:
+	using PixelWrier::PixelWriter;
+
+	virtual void write(int x, int y, PixelCol& c) override {
+		auto p = PixelAt(x, y);
+		p[0] = c.b, p[1] = c.g, p[2] = c.r;
+	}
+};
+
+//クラス群終了
+
 
 EFI_STATUS EFIAPI UefiMain(
 	EFI_HANDLE image_handle,
 	EFI_SYSTEM_TABLE* system_table) {
-	Print(L"Hello,World!\n This is laplus OS!");
+	//Print(L"Hello,World!\n This is laplus OS!");
 
 	//GOP(Graphics Output Protocol)を使って画面を白に塗りつぶし
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
