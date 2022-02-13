@@ -16,7 +16,7 @@ EFI_STATUS EFIAPI UefiMain(
 	EFI_SYSTEM_TABLE* system_table) {
 	Print(L"Hello,World!\n This is laplus OS!");
 
-	//GOP(Graphics Output Protocol)を使って画面塗りつぶし
+	//GOP(Graphics Output Protocol)を使って画面を白に塗りつぶし
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
 	OpenGOP(image_handle, &gop);
 	Print(L"Resolution: %ux%u, Pixel Format: %s, %u pixels/line\n",
@@ -30,9 +30,7 @@ EFI_STATUS EFIAPI UefiMain(
 		gop->Mode->FrameBufferSize);
 
 	UINT8* frame_buffer = (UINT8*)gop->Mode->FrameBufferBase;
-	for (UINTN i = 0; i < gop->Mode->FrameBufferSize; ++i) {
-		frame_buffer[i] = 255;
-	}
+	for (UINTN i = 0; i < gop->Mode->FrameBufferSize; ++i) { frame_buffer[i] = 255; }
 	//GOP塗りつぶし終了
 
 	//カーネルファイルを読み込む部分
