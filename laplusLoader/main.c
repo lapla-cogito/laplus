@@ -29,6 +29,30 @@ EFI_STATUS EFIAPI UefiMain(
 	Print(L"Kernel: 0x%0lx (%lu bytes)\n", kernel_base_addr, kernel_file_size);
 	//カーネル読み込み終了
 
+	//カーネル起動前にUEFI BIOSのブートサービスの停止
+	EFI_STATUS status;
+	status = gBS->ExitBootServices(image_handle, memmap.map_key);
+	if (EFI_ERROR(status)) {
+		status = GetMemoryMap(&memmap);
+		if (EFI_ERROR(status)) {
+			Print(L"failed to get memory map: %r\n", status);
+			while (1);
+		}
+		status = gBS->ExitBootServices(image_handle, memmap.map_key);
+		if (EFI_ERROR(status)) {
+			Print(L"Could not exit boot service: %r\n", status);
+			while (1);
+		}
+	}
+	//停止終了
+
+	//カーネル起動
+	UINT64 entry_addr = *(UINT64*)(kernel_base_addr + 24);
+	typedef void EntryPointType(void);
+	EntryPointType* entry_point = (EntryPointType*)entry_addr;
+	entry_point();
+	//起動終了
+
 	while (1);
 	return EFI_SUCCESS;
 }
