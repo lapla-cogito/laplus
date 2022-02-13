@@ -1,5 +1,6 @@
 #include  <Uefi.h>
 #include  <Library/UefiLib.h>
+#include  "frame_buffer_config.hpp"
 
 //メモリーマップのリスト
 struct MemoryMap {
@@ -75,9 +76,28 @@ EFI_STATUS EFIAPI UefiMain(
 
 	//カーネル起動
 	UINT64 entry_addr = *(UINT64*)(kernel_base_addr + 24);
-	typedef void EntryPointType(void);
+	struct FrameBufferConfig config = {
+	(UINT8*)gop->Mode->FrameBufferBase,
+	gop->Mode->Info->PixelsPerScanLine,
+	gop->Mode->Info->HorizontalResolution,
+	gop->Mode->Info->VerticalResolution,
+	0
+	};
+	switch (gop->Mode->Info->PixelFormat) {
+	case PixelRedGreenBlueReserved8BitPerColor:
+		config.pixel_format = kPixelRGBResv8BitPerColor;
+		break;
+	case PixelBlueGreenRedReserved8BitPerColor:
+		config.pixel_format = kPixelBGRResv8BitPerColor;
+		break;
+	default:
+		Print(L"Unimplemented pixel format: %d\n", gop->Mode->Info->PixelFormat);
+		Halt();
+	}
+
+	typedef void EntryPointType(const struct FrameBufferConfig*);
 	EntryPointType* entry_point = (EntryPointType*)entry_addr;
-	entry_point();
+	entry_point(&config);
 	//カーネル起動処理終了
 
 	while (1);
