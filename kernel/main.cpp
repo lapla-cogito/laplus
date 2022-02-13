@@ -67,7 +67,8 @@ public:
 };
 //クラス群終了
 
-extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {//エントリーポイント
+//エントリーポイント
+extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 	switch (frame_buffer_config.pixel_format) {
 	case kPixelRGBResv8BitPerColor:
 		pixel_writer = new(pixel_writer_buf)
@@ -79,13 +80,15 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {//エ
 		break;
 	}
 
+	//白塗りつぶし
 	for (int x = 0; x < frame_buffer_config.horizontal_resolution; ++x) {
-		for (int y = 0; y < frame_buffer_config.vertical_resolution; ++y) {
-			pixel_writer->Write(x, y, { 255, 255, 255 });
-		}
+		for (int y = 0; y < frame_buffer_config.vertical_resolution; ++y) { pixel_writer->Write(x, y, { 255, 255, 255 }); }
 	}
+
+	//rect
 	for (int x = 0; x < 200; ++x) {
 		for (int y = 0; y < 100; ++y) { pixel_writer->Write(x, y, { 0, 0, 255 }); }
 	}
+
 	while (1) __asm__("hlt");
 }
