@@ -1,6 +1,7 @@
 #include  <Uefi.h>
 #include  <Library/UefiLib.h>
 
+//メモリーマップのリスト
 struct MemoryMap {
 	UINTN buffer_size;
 	VOID* buffer;
@@ -37,7 +38,7 @@ EFI_STATUS EFIAPI UefiMain(
 	//カーネルファイルを読み込む部分
 	EFI_FILE_PROTOCOL* kernel_file;
 	root_dir->Open(
-		root_dir, &kernel_file, L"\\kernel.elf",
+		root_dir, &kernel_file, L"\\kernel.elf",//ELF読み込み
 		EFI_FILE_MODE_READ, 0);
 
 	UINTN file_info_size = sizeof(EFI_FILE_INFO) + sizeof(CHAR16) * 12;
@@ -79,7 +80,7 @@ EFI_STATUS EFIAPI UefiMain(
 	typedef void EntryPointType(void);
 	EntryPointType* entry_point = (EntryPointType*)entry_addr;
 	entry_point();
-	//起動終了
+	//カーネル起動処理終了
 
 	while (1);
 	return EFI_SUCCESS;
