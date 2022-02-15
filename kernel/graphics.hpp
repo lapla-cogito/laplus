@@ -6,6 +6,9 @@ struct PixelColor {
 };
 
 class PixelWriter {
+private:
+	const FrameBufferConfig& config_;
+
 public:
 	PixelWriter(const FrameBufferConfig& config) : config_{ config } {}
 	virtual ~PixelWriter() = default;
@@ -13,9 +16,6 @@ public:
 
 protected:
 	uint8_t* PixelAt(int x, int y) { return config_.frame_buffer + 4 * (config_.pixels_per_scan_line * y + x); }
-
-private:
-	const FrameBufferConfig& config_;
 };
 
 class RGBResv8BitPerColorPixelWriter : public PixelWriter {

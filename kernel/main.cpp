@@ -90,5 +90,9 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 		for (int y = 0; y < 100; ++y) { pixel_writer->Write(x, y, { 0, 0, 255 }); }
 	}
 
+
+	//ASCII文字を1列に描画
+	for (int i = 0, char c = '!'; c <= '~'; ++c, ++i) { WriteAscii(*pixel_writer, 8 * i, 50, c, { 0, 0, 0 }); }
+
 	while (1) __asm__("hlt");
 }
