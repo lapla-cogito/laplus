@@ -85,7 +85,7 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 		for (int y = 0; y < frame_buffer_config.vertical_resolution; ++y) { pixel_writer->Write(x, y, { 255, 255, 255 }); }
 	}
 
-	//rect
+	//座標(0,0)から200x100の(0,255,0)色のrectを描画
 	for (int x = 0; x < 200; ++x) {
 		for (int y = 0; y < 100; ++y) { pixel_writer->Write(x, y, { 0, 0, 255 }); }
 	}

@@ -23,7 +23,7 @@ struct MemoryMap {
 	UINT32 descriptor_version;
 };
 
-
+//メモリーマップの取得
 EFI_STATUS GetMemoryMap(struct MemoryMap* map) {
 	if (map->buffer == NULL) { return EFI_BUFFER_TOO_SMALL; }
 
@@ -55,6 +55,17 @@ const CHAR16* GetMemoryTypeUnicode(EFI_MEMORY_TYPE type) {
 	case EfiPersistentMemory: return L"EfiPersistentMemory";
 	case EfiMaxMemoryType: return L"EfiMaxMemoryType";
 	default: return L"InvalidMemoryType";
+	}
+}
+
+const CHAR16* GetPixelFormatUnicode(EFI_PIXEL_GRAPHICS_FORMAT fmt) {
+	switch (fmt) {
+	case PixelRedGreenBlueReserved8bitPerColor: return L"PixelRedGreenBlueReserved 8bitPerColor";
+	case PixelBlueGreenRedReserved8bitPerColor: return L"PixelBlueGreenRedReservedPerColor";
+	case PixelBitMask: return L"PixelBitMask";
+	case PixelBitOnly:return L"PixelBitOnly";
+	case PixelFormatMax:return L"PixelFormatMax";
+	default: return L"Invalid PixelFormat";
 	}
 }
 
@@ -170,7 +181,7 @@ EFI_STATUS EFIAPI UefiMain(
 	//カーネルファイルを読み込む部分
 	EFI_FILE_PROTOCOL* kernel_file;
 	root_dir->Open(
-		root_dir, &kernel_file, L"\\kernel.elf",//ELF読み込み
+		root_dir, &kernel_file, L"\\kernel.elf",//read elf file
 		EFI_FILE_MODE_READ, 0);
 
 	UINTN file_info_size = sizeof(EFI_FILE_INFO) + sizeof(CHAR16) * 12;
@@ -190,6 +201,39 @@ EFI_STATUS EFIAPI UefiMain(
 	Print(L"Kernel: 0x%0lx (%lu bytes)\n", kernel_base_addr, kernel_file_size);
 	//カーネル読み込み終了
 
+
+	//read kernel
+	EFI_FILE_INFO* file_info = (EFI_FILE_INFO*)file_info_buffer;
+	UININ kernel_info_size = file.info->FileSize;
+
+	VOID* kernel_buffer;
+	status = gBS->AllocatePool(EfiLoaderData, kernel_file_size, &kernel_buffer);
+
+	if (EFI_ERROR(status)) {
+		Print(L"Failed to read allocate pool! Status: %r\n", status);
+		Halt();
+	}
+
+	status = kernel_file->Read(kernel_file, &kernel_file, size, kernel_buffer);
+	if (EFI_ERROR(status)) {
+		Print(L"Error! Status: %r\n", status);
+		Halt();
+	}
+	//read終了
+
+	//コピー先のメモリ領域確保
+	Elf64_Ehdr* kernel_ehdr = (Elf64_Ehdr*)kernel_buffer;
+	UINT64 kernel_first_addr, kernel_last_addr;
+	CalcLoadAddressRange(kernel_endr, &kernel_first_addr, &kernel_last_addr);
+
+	UINTN num_pages = (kernel_last_addr - kernel_first_addr + 0xfff) / 0x1000;
+	status = gBS->AllocatePool(AllocateAddress, EfiLoaderData, num_pages, &kernel_first_buffer);
+	if (EFI_ERROR(status)) {
+		Print(L"Failed to read allocate pool! Status: %r\n", status);
+		Halt();
+	}
+	//確保終了
+
 	//カーネル起動前にUEFI BIOSのブートサービスの停止
 	EFI_STATUS status;
 	status = gBS->ExitBootServices(image_handle, memmap.map_key);
@@ -207,7 +251,7 @@ EFI_STATUS EFIAPI UefiMain(
 	}
 	//停止終了
 
-	//カーネル起動
+	//カーネル起動処理
 	UINT64 entry_addr = *(UINT64*)(kernel_base_addr + 24);
 	struct FrameBufferConfig config = {
 	(UINT8*)gop->Mode->FrameBufferBase,
