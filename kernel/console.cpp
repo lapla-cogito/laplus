@@ -1,10 +1,10 @@
 #include"console.hpp"
 
-//ƒRƒ“ƒXƒgƒ‰ƒNƒ^’è‹`
+//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿å®šç¾©
 Console::Console(PixelWriter& writer, const PixelColor& fg_col, const PixelColor& bg_col) : writer_{ writer }, fg_col_{ fg_col }, bg_col_{ bg_col }, buffer_{}, cursor_row_{ 0 }, cursor_column_{ 0 } {}
-//ƒRƒ“ƒXƒgƒ‰ƒNƒ^I—¹
+//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿å®šç¾©çµ‚äº†
 
-//‰üs
+//æ”¹è¡Œ
 void Console::Newline() {
 	cursor_column_ = 0;
 	if (cursor_row_ < kRows - 1) {
@@ -22,7 +22,7 @@ void Console::Newline() {
 		memset(buffer_[kRows - 1], 0, kColumns + 1);
 	}
 }
-//‰üsI—¹
+//æ”¹è¡Œçµ‚äº†
 
 void Concole::PutString(const char* s) {
 	while (*s) {

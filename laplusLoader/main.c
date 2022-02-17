@@ -10,6 +10,8 @@
 #include  <Protocol/DiskIo2.h>
 #include  <Protocol/BlockIo.h>
 #include  <Guid/FileInfo.h>
+#include"frame_buffer_config.hpp"
+#include"elf.hpp"
 
 void Halt(void) { while (1) __asm__("hlt"); }
 
@@ -154,7 +156,29 @@ EFI_STATUS OpenGOP(EFI_HANDLE image_handle,
 	return EFI_SUCCESS;
 }
 
+void CalcLoadAddressRange(Elf64_Ehdr* ehdr, UINT64* first, UINT64* last) {
+	Elf64_Phdr* phdr = (Elf64_Phdr*)((UINT64)ehdr + ehdr->e_phoff);
+	*first = MAX_UINT64;
+	*last = 0;
+	for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i) {
+		if (phdr[i].p_type != PT_LOAD) continue;
+		*first = MIN(*first, phdr[i].p_vaddr);
+		*last = MAX(*last, phdr[i].p_vaddr + phdr[i].p_memsz);
+	}
+}
 
+void CopyLoadSegments(Elf64_Ehdr* ehdr) {
+	Elf64_Phdr* phdr = (Elf64_Phdr*)((UINT64)ehdr + ehdr->e_phoff);
+	for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i) {
+		if (phdr[i].p_type != PT_LOAD) continue;
+
+		UINT64 segm_in_file = (UINT64)ehdr + phdr[i].p_offset;
+		CopyMem((VOID*)phdr[i].p_vaddr, (VOID*)segm_in_file, phdr[i].p_filesz);
+
+		UINTN remain_bytes = phdr[i].p_memsz - phdr[i].p_filesz;
+		SetMem((VOID*)(phdr[i].p_vaddr + phdr[i].p_filesz), remain_bytes, 0);
+	}
+}
 
 EFI_STATUS EFIAPI UefiMain(
 	EFI_HANDLE image_handle,
@@ -276,6 +300,8 @@ EFI_STATUS EFIAPI UefiMain(
 	EntryPointType* entry_point = (EntryPointType*)entry_addr;
 	entry_point(&config);
 	//カーネル起動処理終了
+
+	Print(L"All done!\n");
 
 	while (1);
 	return EFI_SUCCESS;

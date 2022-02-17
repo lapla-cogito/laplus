@@ -1,5 +1,9 @@
 #include<cstdint>
 #include<cstddef>
+#include"frame_buffer_config.hpp"
+#include"font.hpp"
+#include"graphics.hpp"
+#include"console.hpp"
 
 
 //ピクセルの色
@@ -67,6 +71,24 @@ public:
 };
 //クラス群終了
 
+//コンソールクラスのバッファ
+char console_buf[sizeof(Console)];
+Console* console;
+//バッファ終了
+
+//Linuxのprintkと同様
+int printk(const char* format, ...) {
+	va_list ap;
+	int result;
+	char s[1024];
+	va_start(ap, format);
+	result = vsprintf(s, format, ap);
+	va_end(ap);
+	console->PutString(s);
+	return result;
+}
+//printk終了
+
 //エントリーポイント
 extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 	switch (frame_buffer_config.pixel_format) {
@@ -93,6 +115,12 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 
 	//ASCII文字を1列に描画
 	for (int i = 0, char c = '!'; c <= '~'; ++c, ++i) { WriteAscii(*pixel_writer, 8 * i, 50, c, { 0, 0, 0 }); }
+
+	//新規コンソール
+	console = new(console_buf) Console{ *pixel_writer, {0, 0, 0}, {255, 255, 255} };
+
+	//printkを用いたコンソール表示
+	for (int i = 0; i < 27; ++i) { printk("printk: %d\n", i); }
 
 	while (1) __asm__("hlt");
 }
