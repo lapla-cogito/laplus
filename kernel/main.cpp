@@ -16,6 +16,39 @@ void* operator new(size_t size, void* buf) { return buf; }
 void operator delete(void* obj) noexcept {}
 //定義終了
 
+
+const PixelColor kDesktopBGColor{ 45, 118, 237 };
+const PixelColor kDesktopFGColor{ 255, 255, 255 };
+
+const int kMouseCursorWidth = 15;
+const int kMouseCursorHeight = 24;
+const char mouse_cursor_shape[kMouseCursorHeight][kMouseCursorWidth + 1] = {
+  "@              ",
+  "@@             ",
+  "@.@            ",
+  "@..@           ",
+  "@...@          ",
+  "@....@         ",
+  "@.....@        ",
+  "@......@       ",
+  "@.......@      ",
+  "@........@     ",
+  "@.........@    ",
+  "@..........@   ",
+  "@...........@  ",
+  "@............@ ",
+  "@......@@@@@@@@",
+  "@......@       ",
+  "@....@@.@      ",
+  "@...@ @.@      ",
+  "@..@   @.@     ",
+  "@.@    @.@     ",
+  "@@      @.@    ",
+  "@       @.@    ",
+  "         @.@   ",
+  "         @@@   ",
+};
+
 /*
 //return: 0 success, nonzero fail
 int WritePixel(const FrameBufferConfig& config,
@@ -121,6 +154,20 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 
 	//printkを用いたコンソール表示
 	for (int i = 0; i < 27; ++i) { printk("printk: %d\n", i); }
+
+	//PCIデバイスの列挙
+	auto err = pci::ScanAllBus();
+	printk("ScanAllBus: %s\n", err.Name());
+
+	for (int i = 0; i < pci::num_device; ++i) {
+		const auto& dev = pci::devices[i];
+		auto vendor_id = pci::ReadVendorId(dev.bus, dev.device, dev.function);
+		auto class_code = pci::ReadClassCode(dev.bus, dev.device, dev.function);
+		printk("%d.%d.%d: vend %04x, class %08x, head %02x\n",
+			dev.bus, dev.device, dev.function,
+			vendor_id, class_code, dev.header_type);
+	}
+	//列挙終了
 
 	while (1) __asm__("hlt");
 }
