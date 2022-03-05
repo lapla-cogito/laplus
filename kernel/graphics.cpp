@@ -7,7 +7,7 @@ void RGBResv8BitPerColorPixelWriter::Write(int x, int y, const PixelColor& c) {
 	p[1] = c.g;
 	p[2] = c.b;
 }
-//RGBèIóπ
+//RGBÁµÇ‰∫Ü
 
 
 //BGR
@@ -17,4 +17,4 @@ void BGRResv8BitPerColorPixelWriter::Write(int x, int y, const PixelColor& c) {
 	p[1] = c.g;
 	p[2] = c.r;
 }
-//BGRèIóπ
+//BGRÁµÇ‰∫Ü
