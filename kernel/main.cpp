@@ -4,6 +4,9 @@
 #include"font.hpp"
 #include"graphics.hpp"
 #include"console.hpp"
+#include"pci.hpp"
+#include"logger.hpp"
+#include"mouse.hpp"
 
 
 //ピクセルの色
@@ -19,35 +22,6 @@ void operator delete(void* obj) noexcept {}
 
 const PixelColor kDesktopBGColor{ 45, 118, 237 };
 const PixelColor kDesktopFGColor{ 255, 255, 255 };
-
-const int kMouseCursorWidth = 15;
-const int kMouseCursorHeight = 24;
-const char mouse_cursor_shape[kMouseCursorHeight][kMouseCursorWidth + 1] = {
-  "@              ",
-  "@@             ",
-  "@.@            ",
-  "@..@           ",
-  "@...@          ",
-  "@....@         ",
-  "@.....@        ",
-  "@......@       ",
-  "@.......@      ",
-  "@........@     ",
-  "@.........@    ",
-  "@..........@   ",
-  "@...........@  ",
-  "@............@ ",
-  "@......@@@@@@@@",
-  "@......@       ",
-  "@....@@.@      ",
-  "@...@ @.@      ",
-  "@..@   @.@     ",
-  "@.@    @.@     ",
-  "@@      @.@    ",
-  "@       @.@    ",
-  "         @.@   ",
-  "         @@@   ",
-};
 
 /*
 //return: 0 success, nonzero fail
@@ -122,6 +96,34 @@ int printk(const char* format, ...) {
 }
 //printk終了
 
+char mouse_cursor_buf[sizeof(MouseCursor)];
+MouseCursor* mouse_cursor;
+
+void MouseObserver(int8_t displacement_x, int8_t displacement_y) { mouse_cursor->MoveRelative({ displacement_x, displacement_y }); }
+
+//USBポートの制御モード切替用関数
+void SwitchEhci2Xhci(const pci::Device& xhc_dev) {
+	bool intel_ehc_exist = false;
+	//Intel製のコントローラーが存在するか確認
+	for (int i = 0; i < pci::num_device; ++i) {
+		if (pci::devices[i].class_code.Match(0x0cu, 0x03u, 0x20u) /* EHCI */ &&
+			0x8086 == pci::ReadVendorId(pci::devices[i])) {
+			intel_ehc_exist = true;
+			break;
+		}
+	}
+	if (!intel_ehc_exist) { return; }
+
+	//あればEHCIからxHCIへのモード切り替えを実行
+	uint32_t superspeed_ports = pci::ReadConfReg(xhc_dev, 0xdc); // USB3PRM
+	pci::WriteConfReg(xhc_dev, 0xd8, superspeed_ports); // USB3_PSSEN
+	uint32_t ehci2xhci_ports = pci::ReadConfReg(xhc_dev, 0xd4); // XUSB2PRM
+	pci::WriteConfReg(xhc_dev, 0xd0, ehci2xhci_ports); // XUSB2PR
+	Log(kDebug, "SwitchEhci2Xhci: SS = %02, xHCI = %02x\n",
+		superspeed_ports, ehci2xhci_ports);
+}
+//切り替え用関数終了
+
 //エントリーポイント
 extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 	switch (frame_buffer_config.pixel_format) {
@@ -140,10 +142,22 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 		for (int y = 0; y < frame_buffer_config.vertical_resolution; ++y) { pixel_writer->Write(x, y, { 255, 255, 255 }); }
 	}
 
-	//座標(0,0)から200x100の(0,255,0)色のrectを描画
-	for (int x = 0; x < 200; ++x) {
-		for (int y = 0; y < 100; ++y) { pixel_writer->Write(x, y, { 0, 0, 255 }); }
-	}
+	FillRectangle(*pixel_writer,
+		{ 0, 0 },
+		{ kFrameWidth, kFrameHeight - 50 },
+		kDesktopBGColor);
+	FillRectangle(*pixel_writer,
+		{ 0, kFrameHeight - 50 },
+		{ kFrameWidth, 50 },
+		{ 1, 8, 17 });
+	FillRectangle(*pixel_writer,
+		{ 0, kFrameHeight - 50 },
+		{ kFrameWidth / 5, 50 },
+		{ 80, 80, 80 });
+	DrawRectangle(*pixel_writer,
+		{ 10, kFrameHeight - 40 },
+		{ 30, 30 },
+		{ 160, 160, 160 });
 
 
 	//ASCII文字を1列に描画
@@ -154,6 +168,12 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 
 	//printkを用いたコンソール表示
 	for (int i = 0; i < 27; ++i) { printk("printk: %d\n", i); }
+
+	//MouseCursorクラスのコンストラクタを生成
+	mouse_cursor = new(mouse_cursor_buf) MouseCursor{
+	pixel_writer, kDesktopBGColor, {300, 200}
+	};
+	//生成終了
 
 	//PCIデバイスの列挙
 	auto err = pci::ScanAllBus();
@@ -168,6 +188,74 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 			vendor_id, class_code, dev.header_type);
 	}
 	//列挙終了
+
+	//Intel製を優先してPCIバスからxHCデバイスを探索
+	//クラスコードが0x0c,0x03,0x30のものを探す
+	pci::Device* xhc_dev = nullptr;
+	for (int i = 0; i < pci::num_device; ++i) {
+		if (pci::devices[i].class_code.Match(0x0cu, 0x03u, 0x30u)) {
+			xhc_dev = &pci::devices[i];
+
+			if (0x8086 == pci::ReadVendorId(*xhc_dev)) { break; }
+		}
+	}
+
+	//xhc_devがnullで無ければxHCが存在する
+	if (xhc_dev) { Log(kInfo, "xHC has been found: %d.%d.%d\n", xhc_dev->bus, xhc->device, xhc_dev->function); }
+	//探索終了
+
+	//BAR0レジスタを読み取り
+	//xHCのレジスタ群が存在するメモリアドレスを取得したい
+	//xHCはMMIO(Memory-Mapped I/O)によって制御されている
+	//MMIOはメモリと同様に読み書きできるレジスタでMMIOアドレスはPCIコンフィギュレーション空間内のBAR0(Base Address Register 0)に記録されている
+	const WithError<uint64_t> xhc_bar = pci::ReadBar(*xhc_dev, 0);
+	Log(kDebug, "ReadBar: %s\n", xhc_bar.error.Name());
+	const uint64_t xhc_mmio_base = xhc_bar.value & ~static_cast<uint64_t>(0xf);
+	Log(kDebug, "xHC mmio_base = %08lx\n", xhc_mmio_base);
+	//読み取り終了
+
+	sb::xhci::Controller xhc{ xhc_mmio_base };
+
+	//xHCの初期化
+	if (0x8086 == pci::ReadVendorId(*xhc_dev)) {
+		SwitchEhci2Xhci(*xhc_dev);
+	}
+	{
+		auto err = xhc.Initialize();
+		Log(kDebug, "xhc.Initialize: %s\n", err.Name());
+	}
+
+	Log(kInfo, "xHC starting...\n");
+	//初期化終了
+
+	//xHC起動
+	xhc.Run();
+	//起動終了
+
+	//USBポートを調べる
+	usb::HIDMouseDriver::default_observer = MouseObserver;
+	for (int i = 1; i <= xhc.MaxPorts(); ++i) {
+		auto port = xhc.PortAt(i);
+		Log(kDebug, "Port %d: IsConnected=%d\n", i, port.IsConnected());
+		//接続済みのポートには適宜設定(ポートリセット,xHCの内部設定,クラスドライバの生成 etc...)を行う
+		if (port.IsConnected()) {
+			if (auto err = ConfigurePort(xhc, port)) {
+				Log(kError, "failed to configure port: %s at %s:%d\n",
+					err.Name(), err.File(), err.Line());
+				continue;
+			}
+		}
+	}
+	//調査終了
+
+	//xHCに溜まったイベントの処理
+	while (1) {
+		if (auto err = ProcessEvent(xhc)) {
+			Log(kError, "Error while ProcessEvent: %s at %s:%d\n",
+				err.Name(), err.File(), err.Line());
+		}
+	}
+	//処理終了
 
 	while (1) __asm__("hlt");
 }
