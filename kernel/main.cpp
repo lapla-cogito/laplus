@@ -1,12 +1,20 @@
 #include<cstdint>
 #include<cstddef>
+#include<cstdio>
+#include<numeric>
+#include<vector>
 #include"frame_buffer_config.hpp"
-#include"font.hpp"
 #include"graphics.hpp"
+#include"mouse.hpp"
+#include"font.hpp"
 #include"console.hpp"
 #include"pci.hpp"
 #include"logger.hpp"
-#include"mouse.hpp"
+#include"usb/memory.hpp"
+#include"usb/device.hpp"
+#include"usb/classdriver/mouse.hpp"
+#include"usb/xhci/xhci.hpp"
+#include"usb/xhci/trb.hpp"
 
 
 //ピクセルの色
