@@ -1,5 +1,4 @@
-//USB デバイスクラス用のドライバのベースクラス.
-
+//USB デバイスクラス用のドライバのベースクラス
 #pragma once
 #include "error.hpp"
 #include "usb/endpoint.hpp"
@@ -20,7 +19,7 @@ namespace usb {
 			const void* buf, int len) = 0;
 		virtual Error OnInterruptCompleted(EndpointID ep_id, const void* buf, int len) = 0;
 
-		//このクラスドライバを保持する USB デバイスを返す
+		//このクラスドライバを保持するUSBデバイスを返す
 		Device* ParentDevice() const { return dev_; }
 
 	private:

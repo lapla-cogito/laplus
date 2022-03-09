@@ -1,4 +1,4 @@
-//USBデバイスを表すクラスと関連機能.
+//USBデバイスを表すクラスと関連機能
 #pragma once
 #include <cstddef>
 #include <cstdint>
@@ -58,7 +58,7 @@ namespace usb::xhci {
 		DoorbellRegister* const dbreg_;
 
 		enum State state_;
-		std::array<Ring*, 31> transfer_rings_; // index = dci - 1
+		std::array<Ring*, 31> transfer_rings_; //index = dci - 1
 
 		//コントロール転送が完了した際に DataStageTRB や StatusStageTRBから対応するSetupStageTRBを検索するためのマップ
 		ArrayMap<const void*, const SetupStageTRB*, 16> setup_stage_map_{};

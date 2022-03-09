@@ -1,5 +1,4 @@
 //エンドポイント設定に関する機能
-
 #pragma once
 #include "error.hpp"
 
@@ -18,7 +17,7 @@ namespace usb {
 		explicit constexpr EndpointID(int addr) : addr_{ addr } {}
 
 		/** エンドポイント番号と入出力方向からIDを構成する．
-		 * ep_numは 0-15 の整数
+		 * ep_numは0-15の整数
 		 * dir_inはControlエンドポイントでは常にtrueにしなければならない．
 		 */
 		constexpr EndpointID(int ep_num, bool dir_in) : addr_{ ep_num << 1 | dir_in } {}

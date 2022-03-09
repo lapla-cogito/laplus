@@ -1,5 +1,4 @@
 //USB ドライバ用の動的メモリ管理機能
-
 #pragma once
 #include <cstddef>
 

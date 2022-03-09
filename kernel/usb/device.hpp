@@ -1,5 +1,4 @@
 //USBデバイスを表すクラスと関連機能
-
 #pragma once
 #include <array>
 #include "error.hpp"

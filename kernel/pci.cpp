@@ -34,7 +34,7 @@ namespace {
 
 	Error ScanBus(uint8_t bus);
 
-	//指定のファンクションを devices に追加する.もし PCI-PCI ブリッジなら，セカンダリバスに対し ScanBus を実行する.
+	//指定のファンクションをdevicesに追加する.もしPCI-PCIブリッジなら,セカンダリバスに対しScanBusを実行する.
 	Error ScanFunction(uint8_t bus, uint8_t device, uint8_t function) {
 		auto header_type = ReadHeaderType(bus, device, function);
 		if (auto err = AddDevice(bus, device, function, header_type)) {
@@ -77,15 +77,11 @@ namespace {
 	}
 	//ファンクションスキャン終了
 
-	//指定のバス番号の各デバイスをスキャンする.有効なデバイスを見つけたら ScanDevice を実行する.
+	//指定のバス番号の各デバイスをスキャンする.有効なデバイスを見つけたらScanDeviceを実行する.
 	Error ScanBus(uint8_t bus) {
 		for (uint8_t device = 0; device < 32; ++device) {
-			if (ReadVendorId(bus, device, 0) == 0xffffu) {
-				continue;
-			}
-			if (auto err = ScanDevice(bus, device)) {
-				return err;
-			}
+			if (ReadVendorId(bus, device, 0) == 0xffffu) { continue; }
+			if (auto err = ScanDevice(bus, device)) { return err; }
 		}
 		return Error::kSuccess;
 	}
@@ -167,12 +163,12 @@ namespace pci {
 		const auto addr = CalcBarAddress(bar_index);
 		const auto bar = ReadConfReg(device, addr);
 
-		// 32 bit address
+		//32bit address
 		if ((bar & 4u) == 0) {
 			return { bar, MAKE_ERROR(Error::kSuccess) };
 		}
 
-		// 64 bit address
+		//64bit address
 		if (bar_index >= 5) {
 			return { 0, MAKE_ERROR(Error::kIndexOutOfRange) };
 		}

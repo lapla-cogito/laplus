@@ -1,11 +1,9 @@
 #include "usb/device.hpp"
-
 #include "usb/descriptor.hpp"
 #include "usb/setupdata.hpp"
 #include "usb/classdriver/base.hpp"
 #include "usb/classdriver/keyboard.hpp"
 #include "usb/classdriver/mouse.hpp"
-
 #include "logger.hpp"
 
 namespace {
@@ -19,18 +17,15 @@ namespace {
 
 		const uint8_t* Next() {
 			p_ += p_[0];
-			if (p_ < desc_buf_ + desc_buf_len_) {
-				return p_;
-			}
+			if (p_ < desc_buf_ + desc_buf_len_) { return p_; }
+
 			return nullptr;
 		}
 
 		template <class T>
 		const T* Next() {
 			while (auto n = Next()) {
-				if (auto d = usb::DescriptorDynamicCast<T>(n)) {
-					return d;
-				}
+				if (auto d = usb::DescriptorDynamicCast<T>(n)) { return d; }
 			}
 			return nullptr;
 		}
@@ -107,17 +102,15 @@ namespace usb {
 
 	Error Device::ControlIn(EndpointID ep_id, SetupData setup_data,
 		void* buf, int len, ClassDriver* issuer) {
-		if (issuer) {
-			event_waiters_.Put(setup_data, issuer);
-		}
+		if (issuer) { event_waiters_.Put(setup_data, issuer); }
+
 		return MAKE_ERROR(Error::kSuccess);
 	}
 
 	Error Device::ControlOut(EndpointID ep_id, SetupData setup_data,
 		const void* buf, int len, ClassDriver* issuer) {
-		if (issuer) {
-			event_waiters_.Put(setup_data, issuer);
-		}
+		if (issuer) { event_waiters_.Put(setup_data, issuer); }
+
 		return MAKE_ERROR(Error::kSuccess);
 	}
 
@@ -171,12 +164,12 @@ namespace usb {
 				DescriptorDynamicCast<ConfigurationDescriptor>(buf8)) {
 				return InitializePhase2(buf8, len);
 			}
+
 			return MAKE_ERROR(Error::kInvalidPhase);
 		}
 		else if (initialize_phase_ == 3) {
-			if (setup_data.request == request::kSetConfiguration) {
-				return InitializePhase3(setup_data.value & 0xffu);
-			}
+			if (setup_data.request == request::kSetConfiguration) { return InitializePhase3(setup_data.value & 0xffu); }
+
 			return MAKE_ERROR(Error::kInvalidPhase);
 		}
 
@@ -196,7 +189,7 @@ namespace usb {
 		num_configurations_ = device_desc->num_configurations;
 		config_index_ = 0;
 		initialize_phase_ = 2;
-		Log(kDebug, "issuing GetDesc(Config): index=%d)\n", config_index_);
+		Log(kDebug, "Issuing GetDesc(Config): index=%d)\n", config_index_);
 		return GetDescriptor(*this, kDefaultControlPipeID,
 			ConfigurationDescriptor::kType, config_index_,
 			buf_.data(), buf_.size(), true);
@@ -204,9 +197,7 @@ namespace usb {
 
 	Error Device::InitializePhase2(const uint8_t* buf, int len) {
 		auto conf_desc = DescriptorDynamicCast<ConfigurationDescriptor>(buf);
-		if (conf_desc == nullptr) {
-			return MAKE_ERROR(Error::kInvalidDescriptor);
-		}
+		if (conf_desc == nullptr) { return MAKE_ERROR(Error::kInvalidDescriptor); }
 		ConfigurationDescriptorReader config_reader{ buf, len };
 
 		ClassDriver* class_driver = nullptr;
@@ -215,7 +206,7 @@ namespace usb {
 
 			class_driver = NewClassDriver(this, *if_desc);
 
-			// 非対応デバイスなら次のインターフェイスを調べる．
+			// 非対応デバイスなら次のインターフェイスを調べる
 			if (class_driver == nullptr) { continue; }
 
 			num_ep_configs_ = 0;
@@ -238,11 +229,10 @@ namespace usb {
 			break;
 		}
 
-		if (!class_driver) {
-			return MAKE_ERROR(Error::kSuccess);
-		}
+		if (!class_driver) { return MAKE_ERROR(Error::kSuccess); }
+
 		initialize_phase_ = 3;
-		Log(kDebug, "issuing SetConfiguration: conf_val=%d\n",
+		Log(kDebug, "Issuing SetConfiguration: conf_val=%d\n",
 			conf_desc->configuration_value);
 		return SetConfiguration(*this, kDefaultControlPipeID,
 			conf_desc->configuration_value, true);

@@ -248,7 +248,7 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 		//接続済みのポートには適宜設定(ポートリセット,xHCの内部設定,クラスドライバの生成 etc...)を行う
 		if (port.IsConnected()) {
 			if (auto err = ConfigurePort(xhc, port)) {
-				Log(kError, "failed to configure port: %s at %s:%d\n",
+				Log(kError, "Failed to configure port: %s at %s:%d\n",
 					err.Name(), err.File(), err.Line());
 				continue;
 			}
