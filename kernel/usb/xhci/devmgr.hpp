@@ -1,4 +1,4 @@
-//USBデバイスの管理機能.
+//USBデバイスの管理機能
 #pragma once
 #include <cstddef>
 #include <cstdint>

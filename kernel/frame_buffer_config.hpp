@@ -1,7 +1,5 @@
 //フレームバッファの構成情報を表す構造体
-
 #pragma once
-
 #include <stdint.h>
 
 enum PixelFormat {

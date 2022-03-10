@@ -1,5 +1,5 @@
 #pragma once
-#include"graphics.hpp"
+#include "graphics.hpp"
 
 //マウスカーソルの描画と移動を制御するクラス
 class MouseCursor {

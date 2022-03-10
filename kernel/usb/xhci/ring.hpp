@@ -1,4 +1,4 @@
-//Event Ring,Command Ring,Transfer Ring のクラスや関連機能.
+//Event Ring,Command Ring,Transfer Ring のクラスや関連機能
 #pragma once
 #include <cstdint>
 #include <vector>

@@ -1,4 +1,4 @@
-//Transfer Request Block 関連.
+//Transfer Request Block 関連
 #pragma once
 #include <cstdint>
 #include <array>

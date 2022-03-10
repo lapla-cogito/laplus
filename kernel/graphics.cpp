@@ -1,4 +1,4 @@
-#include"graphics.hpp"
+#include "graphics.hpp"
 
 //RGB
 void RGBResv8BitPerColorPixelWriter::Write(int x, int y, const PixelColor& c) {

@@ -10,8 +10,8 @@
 #include  <Protocol/DiskIo2.h>
 #include  <Protocol/BlockIo.h>
 #include  <Guid/FileInfo.h>
-#include"frame_buffer_config.hpp"
-#include"elf.hpp"
+#include "frame_buffer_config.hpp"
+#include "elf.hpp"
 
 void Halt(void) { while (1) __asm__("hlt"); }
 

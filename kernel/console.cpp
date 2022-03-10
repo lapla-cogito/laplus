@@ -1,4 +1,4 @@
-#include"console.hpp"
+#include "console.hpp"
 
 //コンストラクタ定義
 Console::Console(PixelWriter& writer, const PixelColor& fg_col, const PixelColor& bg_col) : writer_{ writer }, fg_col_{ fg_col }, bg_col_{ bg_col }, buffer_{}, cursor_row_{ 0 }, cursor_column_{ 0 } {}

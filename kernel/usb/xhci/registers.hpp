@@ -1,7 +1,5 @@
-//xHCIのレジスタ定義.
-
+//xHCIのレジスタ定義
 #pragma once
-
 #include "register.hpp"
 
 namespace usb::xhci {

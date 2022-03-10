@@ -1,10 +1,7 @@
 //xHCIの各ポートを表すクラスと周辺機能
-
 #pragma once
-
 #include <cstdint>
 #include "error.hpp"
-
 #include "usb/xhci/registers.hpp"
 
 #define CLEAR_STATUS_BIT(bitname) \
