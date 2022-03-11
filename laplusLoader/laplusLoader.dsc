@@ -1,4 +1,4 @@
-#@range_begin(defines)
+#defines
 [Defines]
   PLATFORM_NAME                  = laplusLoader
   PLATFORM_GUID                  = d3f11f4e-71e9-11e8-a7e1-33fd4f7d5a3e
@@ -7,13 +7,13 @@
   OUTPUT_DIRECTORY               = Build/laplusLoaderOutp$(ARCH)
   SUPPORTED_ARCHITECTURES        = X64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
-#@range_end(defines)
+#defines end
 
-#@range_begin(library_classes)
+#library_classes
 [LibraryClasses]
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
-#@range_end(library_classes)
+#library_classes end
 
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
@@ -25,7 +25,7 @@
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
 
-#@range_begin(components)
+#components
 [Components]
   laplusLoader/Loader.inf
-#@range_end(components)
+#components end
