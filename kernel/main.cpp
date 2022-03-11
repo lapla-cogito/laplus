@@ -1,278 +1,307 @@
+//カーネル本体
 #include <cstdint>
 #include <cstddef>
 #include <cstdio>
+#include <deque>
+#include <limits>
 #include <numeric>
 #include <vector>
 #include "frame_buffer_config.hpp"
+#include "memory_map.hpp"
 #include "graphics.hpp"
 #include "mouse.hpp"
 #include "font.hpp"
 #include "console.hpp"
 #include "pci.hpp"
 #include "logger.hpp"
-#include "usb/memory.hpp"
-#include "usb/device.hpp"
-#include "usb/classdriver/mouse.hpp"
 #include "usb/xhci/xhci.hpp"
-#include "usb/xhci/trb.hpp"
+#include "interrupt.hpp"
+#include "asmfunc.h"
+#include "segment.hpp"
+#include "paging.hpp"
+#include "memory_manager.hpp"
+#include "window.hpp"
+#include "layer.hpp"
+#include "message.hpp"
+#include "timer.hpp"
+#include "acpi.hpp"
+#include "keyboard.hpp"
+#include "task.hpp"
+#include "terminal.hpp"
+#include "fat.hpp"
+#include "syscall.hpp"
+#include "uefi.hpp"
 
 
-//ピクセルの色
-struct PixelCol {
-	uint8_t r, g, b;
-};
-
-//演算子定義
-void* operator new(size_t size, void* buf) { return buf; }
-void operator delete(void* obj) noexcept {}
-//定義終了
-
-
-const PixelColor kDesktopBGColor{ 45, 118, 237 };
-const PixelColor kDesktopFGColor{ 255, 255, 255 };
-
-/*
-//return: 0 success, nonzero fail
-int WritePixel(const FrameBufferConfig& config,
-	int x, int y, const PixelCol& c) {
-	const int pixel_position = config.pixels_per_scan_line * y + x;
-
-	if (config.pixel_format == kPixelRGBesv8BitPerColor) {
-		uint8_t* p = &config.frame_buffer[pixel_position * 4];
-		p[0] = c.r, p[1] = c.g, p[2] = c.b;
-	}
-	else if (config.pixel_format == kPixelBGResv8BitPerColor) {
-		uint8_t* p = &config.frame_buffer[pixel_position * 4];
-		p[0] = c.b, p[1] = c.g, p[2] = c.r;
-	}
-	else { return -1; }
-	return 0;
-}
-*/
-
-
-class PixelWriter {
-private:
-	const FrameBufferConfig& config_;
-
-public:
-	PixelWriter(const FrameBufferConfig& config) :config_{ config } {}
-	virtual ~PixelWriter() = default;
-	virtual void write(int x, int y, const PixelCol& c) = 0;
-
-protected:
-	uint8_t* PixelAt(int x, int y) { retunr config_.frame_buffer + 4 * (config_.pixels_per_scan_line * y + x); }
-};
-
-//PixelWriterを継承したクラス群
-class RGBResv8bitPerColorPixelWriter :public PixelWriter {
-public:
-	using PixelWrier::PixelWriter;
-
-	virtual void write(int x, int y, PixelCol& c) override {
-		auto p = PixelAt(x, y);
-		p[0] = c.r, p[1] = c.g, p[2] = c.b;
-	}
-};
-
-class BGRResv8bitPerColorPixelWriter :public PixelWriter {
-public:
-	using PixelWrier::PixelWriter;
-
-	virtual void write(int x, int y, PixelCol& c) override {
-		auto p = PixelAt(x, y);
-		p[0] = c.b, p[1] = c.g, p[2] = c.r;
-	}
-};
-//クラス群終了
-
-char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
-PixelWriter* pixel_writer;
-
-//コンソールクラスのバッファ
-char console_buf[sizeof(Console)];
-Console* console;
-//バッファ終了
-
-//Linuxのprintkと同様
-int printk(const char* format, ...) {
+__attribute__((format(printf, 1, 2))) int printk(const char* format, ...) {
 	va_list ap;
 	int result;
 	char s[1024];
+
 	va_start(ap, format);
 	result = vsprintf(s, format, ap);
 	va_end(ap);
+
 	console->PutString(s);
 	return result;
 }
-//printk終了
 
-char mouse_cursor_buf[sizeof(MouseCursor)];
-MouseCursor* mouse_cursor;
+std::shared_ptr<ToplevelWindow> main_window;
+unsigned int main_window_layer_id;
+void InitializeMainWindow() {
+	main_window = std::make_shared<ToplevelWindow>(
+		160, 52, screen_config.pixel_format, "Hello Window");
 
-void MouseObserver(int8_t displacement_x, int8_t displacement_y) {
-	mouse_cursor->MoveRelative({ displacement_x, displacement_y });
+	main_window_layer_id = layer_manager->NewLayer()
+		.SetWindow(main_window)
+		.SetDraggable(true)
+		.Move({ 300, 100 })
+		.ID();
+
+	layer_manager->UpDown(main_window_layer_id, std::numeric_limits<int>::max());
 }
 
-//USBポートの制御モード切替用関数
-void SwitchEhci2Xhci(const pci::Device& xhc_dev) {
-	bool intel_ehc_exist = false;
-	//Intel製のコントローラーが存在するか確認
-	for (int i = 0; i < pci::num_device; ++i) {
-		if (pci::devices[i].class_code.Match(0x0cu, 0x03u, 0x20u) /* EHCI */ &&
-			0x8086 == pci::ReadVendorId(pci::devices[i])) {
-			intel_ehc_exist = true;
-			break;
+std::shared_ptr<ToplevelWindow> text_window;
+unsigned int text_window_layer_id;
+void InitializeTextWindow() {
+	const int win_w = 160;
+	const int win_h = 52;
+
+	text_window = std::make_shared<ToplevelWindow>(
+		win_w, win_h, screen_config.pixel_format, "Text Box Test");
+	DrawTextbox(*text_window->InnerWriter(), { 0, 0 }, text_window->InnerSize());
+
+	text_window_layer_id = layer_manager->NewLayer()
+		.SetWindow(text_window)
+		.SetDraggable(true)
+		.Move({ 500, 100 })
+		.ID();
+
+	layer_manager->UpDown(text_window_layer_id, std::numeric_limits<int>::max());
+}
+
+int text_window_index;
+
+void DrawTextCursor(bool visible) {
+	const auto color = visible ? ToColor(0) : ToColor(0xffffff);
+	const auto pos = Vector2D<int>{ 4 + 8 * text_window_index, 5 };
+	FillRectangle(*text_window->InnerWriter(), pos, { 7, 15 }, color);
+}
+
+void InputTextWindow(char c) {
+	if (c == 0) {
+		return;
+	}
+
+	auto pos = []() { return Vector2D<int>{4 + 8 * text_window_index, 6}; };
+
+	const int max_chars = (text_window->InnerSize().x - 8) / 8 - 1;
+	if (c == '\b' && text_window_index > 0) {
+		DrawTextCursor(false);
+		--text_window_index;
+		FillRectangle(*text_window->InnerWriter(), pos(), { 8, 16 }, ToColor(0xffffff));
+		DrawTextCursor(true);
+	}
+	else if (c >= ' ' && text_window_index < max_chars) {
+		DrawTextCursor(false);
+		WriteAscii(*text_window->InnerWriter(), pos(), c, ToColor(0));
+		++text_window_index;
+		DrawTextCursor(true);
+	}
+
+	layer_manager->Draw(text_window_layer_id);
+}
+
+alignas(16) uint8_t kernel_main_stack[1024 * 1024];
+
+void TaskWallclock(uint64_t task_id, int64_t data) {
+	__asm__("cli");
+	Task& task = task_manager->CurrentTask();
+	auto clock_window = std::make_shared<Window>(
+		8 * 10, 16 * 2, screen_config.pixel_format);
+	const auto clock_window_layer_id = layer_manager->NewLayer()
+		.SetWindow(clock_window)
+		.SetDraggable(false)
+		.Move(ScreenSize() - clock_window->Size() - Vector2D<int>{4, 8})
+		.ID();
+	layer_manager->UpDown(clock_window_layer_id, 2);
+	__asm__("sti");
+
+	auto draw_current_time = [&]() {
+		EFI_TIME t;
+		uefi_rt->GetTime(&t, nullptr);
+
+		FillRectangle(*clock_window->Writer(),
+			{ 0, 0 }, clock_window->Size(), { 0, 0, 0 });
+
+		char s[64];
+		sprintf(s, "%04d-%02d-%02d", t.Year, t.Month, t.Day);
+		WriteString(*clock_window->Writer(), { 0, 0 }, s, { 255, 255, 255 });
+		sprintf(s, "%02d:%02d:%02d", t.Hour, t.Minute, t.Second);
+		WriteString(*clock_window->Writer(), { 0, 16 }, s, { 255, 255, 255 });
+
+		Message msg{ Message::kLayer, task_id };
+		msg.arg.layer.layer_id = clock_window_layer_id;
+		msg.arg.layer.op = LayerOperation::Draw;
+
+		__asm__("cli");
+		task_manager->SendMessage(1, msg);
+		__asm__("sti");
+	};
+
+	draw_current_time();
+	timer_manager->AddTimer(
+		Timer{ timer_manager->CurrentTick(), 1, task_id });
+
+	while (true) {
+		__asm__("cli");
+		auto msg = task.ReceiveMessage();
+		if (!msg) {
+			task.Sleep();
+			__asm__("sti");
+			continue;
+		}
+		__asm__("sti");
+
+		if (msg->type == Message::kTimerTimeout) {
+			draw_current_time();
+			timer_manager->AddTimer(
+				Timer{ msg->arg.timer.timeout + kTimerFreq, 1, task_id });
 		}
 	}
-	if (!intel_ehc_exist) { return; }
-
-	//あればEHCIからxHCIへのモード切り替えを実行
-	uint32_t superspeed_ports = pci::ReadConfReg(xhc_dev, 0xdc); // USB3PRM
-	pci::WriteConfReg(xhc_dev, 0xd8, superspeed_ports); // USB3_PSSEN
-	uint32_t ehci2xhci_ports = pci::ReadConfReg(xhc_dev, 0xd4); // XUSB2PRM
-	pci::WriteConfReg(xhc_dev, 0xd0, ehci2xhci_ports); // XUSB2PR
-	Log(kDebug, "SwitchEhci2Xhci: SS = %02, xHCI = %02x\n",
-		superspeed_ports, ehci2xhci_ports);
 }
-//切り替え用関数終了
 
-//エントリーポイント
-extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
-	switch (frame_buffer_config.pixel_format) {
-	case kPixelRGBResv8BitPerColor:
-		pixel_writer = new(pixel_writer_buf)
-			RGBResv8BitPerColorPixelWriter{ frame_buffer_config };
-		break;
-	case kPixelBGRResv8BitPerColor:
-		pixel_writer = new(pixel_writer_buf)
-			BGRResv8BitPerColorPixelWriter{ frame_buffer_config };
-		break;
-	}
+extern "C" void KernelMainNewStack(
+	const FrameBufferConfig & frame_buffer_config_ref,
+	const MemoryMap & memory_map_ref,
+	const acpi::RSDP & acpi_table,
+	void* volume_image,
+	EFI_RUNTIME_SERVICES * rt) {
+	MemoryMap memory_map{ memory_map_ref };
+	uefi_rt = rt;
 
-	const int kFrameWidth = frame_buffer_config.horizontal_resolution;
-	const int kFrameHeight = frame_buffer_config.vertical_resolution;
+	InitializeGraphics(frame_buffer_config_ref);
+	InitializeConsole();
 
-	FillRectangle(*pixel_writer,
-		{ 0, 0 },
-		{ kFrameWidth, kFrameHeight - 50 },
-		kDesktopBGColor);
-	FillRectangle(*pixel_writer,
-		{ 0, kFrameHeight - 50 },
-		{ kFrameWidth, 50 },
-		{ 1, 8, 17 });
-	FillRectangle(*pixel_writer,
-		{ 0, kFrameHeight - 50 },
-		{ kFrameWidth / 5, 50 },
-		{ 80, 80, 80 });
-	DrawRectangle(*pixel_writer,
-		{ 10, kFrameHeight - 40 },
-		{ 30, 30 },
-		{ 160, 160, 160 });
-
-
-	//ASCII文字を1列に描画
-	for (int i = 0, char c = '!'; c <= '~'; ++c, ++i) { WriteAscii(*pixel_writer, 8 * i, 50, c, { 0, 0, 0 }); }
-
-	//新規コンソール
-	console = new(console_buf) Console{
-		*pixel_writer, kDesktopFGColor, kDesktopBGColor
-	};
-	printk("Welcome to laplus OS!\n");
+	printk("Welcome to MikanOS!\n");
 	SetLogLevel(kWarn);
 
-	//printkを用いたコンソール表示
-	for (int i = 0; i < 27; ++i) { printk("printk: %d\n", i); }
+	InitializeSegmentation();
+	InitializePaging();
+	InitializeMemoryManager(memory_map);
+	InitializeTSS();
+	InitializeInterrupt();
 
-	//MouseCursorクラスのコンストラクタを生成
-	mouse_cursor = new(mouse_cursor_buf) MouseCursor{
-	pixel_writer, kDesktopBGColor, {300, 200}
-	};
-	//生成終了
+	fat::Initialize(volume_image);
+	InitializeFont();
+	InitializePCI();
 
-	//PCIデバイスの列挙
-	auto err = pci::ScanAllBus();
-	printk("ScanAllBus: %s\n", err.Name());
+	InitializeLayer();
+	InitializeMainWindow();
+	InitializeTextWindow();
+	layer_manager->Draw({ {0, 0}, ScreenSize() });
 
-	for (int i = 0; i < pci::num_device; ++i) {
-		const auto& dev = pci::devices[i];
-		auto vendor_id = pci::ReadVendorId(dev.bus, dev.device, dev.function);
-		auto class_code = pci::ReadClassCode(dev.bus, dev.device, dev.function);
-		printk("%d.%d.%d: vend %04x, class %08x, head %02x\n",
-			dev.bus, dev.device, dev.function,
-			vendor_id, class_code, dev.header_type);
-	}
-	//列挙終了
+	acpi::Initialize(acpi_table);
+	InitializeLAPICTimer();
 
-	//Intel製を優先してPCIバスからxHCデバイスを探索
-	//クラスコードが0x0c,0x03,0x30のものを探す
-	pci::Device* xhc_dev = nullptr;
-	for (int i = 0; i < pci::num_device; ++i) {
-		if (pci::devices[i].class_code.Match(0x0cu, 0x03u, 0x30u)) {
-			xhc_dev = &pci::devices[i];
+	const int kTextboxCursorTimer = 1;
+	const int kTimer05Sec = static_cast<int>(kTimerFreq * 0.5);
+	timer_manager->AddTimer(Timer{ kTimer05Sec, kTextboxCursorTimer, 1 });
+	bool textbox_cursor_visible = false;
 
-			if (0x8086 == pci::ReadVendorId(*xhc_dev)) { break; }
-		}
-	}
+	InitializeSyscall();
 
-	//xhc_devがnullで無ければxHCが存在する
-	if (xhc_dev) { Log(kInfo, "xHC has been found: %d.%d.%d\n", xhc_dev->bus, xhc->device, xhc_dev->function); }
-	//探索終了
+	InitializeTask();
+	Task& main_task = task_manager->CurrentTask();
 
-	//BAR0レジスタを読み取り
-	//xHCのレジスタ群が存在するメモリアドレスを取得したい
-	//xHCはMMIO(Memory-Mapped I/O)によって制御されている
-	//MMIOはメモリと同様に読み書きできるレジスタでMMIOアドレスはPCIコンフィギュレーション空間内のBAR0(Base Address Register 0)に記録されている
-	const WithError<uint64_t> xhc_bar = pci::ReadBar(*xhc_dev, 0);
-	Log(kDebug, "ReadBar: %s\n", xhc_bar.error.Name());
-	const uint64_t xhc_mmio_base = xhc_bar.value & ~static_cast<uint64_t>(0xf);
-	Log(kDebug, "xHC mmio_base = %08lx\n", xhc_mmio_base);
-	//読み取り終了
+	usb::xhci::Initialize();
+	InitializeKeyboard();
+	InitializeMouse();
 
-	usb::xhci::Controller xhc{ xhc_mmio_base };
+	app_loads = new std::map<fat::DirectoryEntry*, AppLoadInfo>;
+	task_manager->NewTask()
+		.InitContext(TaskTerminal, 0)
+		.Wakeup();
 
-	//xHCの初期化
-	if (0x8086 == pci::ReadVendorId(*xhc_dev)) {
-		SwitchEhci2Xhci(*xhc_dev);
-	}
-	{
-		auto err = xhc.Initialize();
-		Log(kDebug, "xhc.Initialize: %s\n", err.Name());
-	}
+	task_manager->NewTask()
+		.InitContext(TaskWallclock, 0)
+		.Wakeup();
 
-	Log(kInfo, "xHC starting...\n");
-	//初期化終了
+	char str[128];
 
-	//xHC起動
-	xhc.Run();
-	//起動終了
-
-	//USBポートを調べる
-	usb::HIDMouseDriver::default_observer = MouseObserver;
-	for (int i = 1; i <= xhc.MaxPorts(); ++i) {
-		auto port = xhc.PortAt(i);
-		Log(kDebug, "Port %d: IsConnected=%d\n", i, port.IsConnected());
-		//接続済みのポートには適宜設定(ポートリセット,xHCの内部設定,クラスドライバの生成 etc...)を行う
-		if (port.IsConnected()) {
-			if (auto err = ConfigurePort(xhc, port)) {
-				Log(kError, "Failed to configure port: %s at %s:%d\n",
-					err.Name(), err.File(), err.Line());
-				continue;
-			}
-		}
-	}
-	//調査終了
-
-	//xHCに溜まったイベントの処理
 	while (1) {
-		if (auto err = ProcessEvent(xhc)) {
-			Log(kError, "Error while ProcessEvent: %s at %s:%d\n",
-				err.Name(), err.File(), err.Line());
+		__asm__("cli");
+		const auto tick = timer_manager->CurrentTick();
+		__asm__("sti");
+
+		sprintf(str, "%010lu", tick);
+		FillRectangle(*main_window->InnerWriter(), { 20, 4 }, { 8 * 10, 16 }, { 0xc6, 0xc6, 0xc6 });
+		WriteString(*main_window->InnerWriter(), { 20, 4 }, str, { 0, 0, 0 });
+		layer_manager->Draw(main_window_layer_id);
+
+		__asm__("cli");
+		auto msg = main_task.ReceiveMessage();
+		if (!msg) {
+			main_task.Sleep();
+			__asm__("sti");
+			continue;
+		}
+
+		__asm__("sti");
+
+		switch (msg->type) {
+		case Message::kInterruptXHCI:
+			usb::xhci::ProcessEvents();
+			break;
+		case Message::kTimerTimeout:
+			if (msg->arg.timer.value == kTextboxCursorTimer) {
+				__asm__("cli");
+				timer_manager->AddTimer(
+					Timer{ msg->arg.timer.timeout + kTimer05Sec, kTextboxCursorTimer, 1 });
+				__asm__("sti");
+				textbox_cursor_visible = !textbox_cursor_visible;
+				DrawTextCursor(textbox_cursor_visible);
+				layer_manager->Draw(text_window_layer_id);
+			}
+			break;
+		case Message::kKeyPush:
+			if (auto act = active_layer->GetActive(); act == text_window_layer_id) {
+				if (msg->arg.keyboard.press) {
+					InputTextWindow(msg->arg.keyboard.ascii);
+				}
+			}
+			else if (msg->arg.keyboard.press &&
+				msg->arg.keyboard.keycode == 59 /* F2 */) {
+				task_manager->NewTask()
+					.InitContext(TaskTerminal, 0)
+					.Wakeup();
+			}
+			else {
+				__asm__("cli");
+				auto task_it = layer_task_map->find(act);
+				__asm__("sti");
+				if (task_it != layer_task_map->end()) {
+					__asm__("cli");
+					task_manager->SendMessage(task_it->second, *msg);
+					__asm__("sti");
+				}
+				else {
+					printk("key push not handled: keycode %02x, ascii %02x\n",
+						msg->arg.keyboard.keycode,
+						msg->arg.keyboard.ascii);
+				}
+			}
+			break;
+		case Message::kLayer:
+			ProcessLayerMessage(*msg);
+			__asm__("cli");
+			task_manager->SendMessage(msg->src_task, Message{ Message::kLayerFinish });
+			__asm__("sti");
+			break;
+		default:
+			Log(kError, "Unknown message type: %d\n", msg->type);
 		}
 	}
-	//処理終了
-
-	while (1) __asm__("hlt");
 }
 
 extern "C" void __cxa_pure_virtual() {
