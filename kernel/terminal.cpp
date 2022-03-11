@@ -17,6 +17,7 @@
 #include "usb/xhci/xhci.hpp"
 
 namespace {
+
 	WithError<int> MakeArgVector(char* command, char* first_arg,
 		char** argv, int argv_len, char* argbuf, int argbuf_len) {
 		int argc = 0;
@@ -226,7 +227,7 @@ namespace {
 		return FindCommand(command, apps_entry.first->FirstCluster());
 	}
 
-} // namespace
+}
 
 std::map<fat::DirectoryEntry*, AppLoadInfo>* app_loads;
 
