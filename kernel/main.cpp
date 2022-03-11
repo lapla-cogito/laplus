@@ -86,6 +86,9 @@ public:
 };
 //クラス群終了
 
+char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
+PixelWriter* pixel_writer;
+
 //コンソールクラスのバッファ
 char console_buf[sizeof(Console)];
 Console* console;
@@ -107,7 +110,9 @@ int printk(const char* format, ...) {
 char mouse_cursor_buf[sizeof(MouseCursor)];
 MouseCursor* mouse_cursor;
 
-void MouseObserver(int8_t displacement_x, int8_t displacement_y) { mouse_cursor->MoveRelative({ displacement_x, displacement_y }); }
+void MouseObserver(int8_t displacement_x, int8_t displacement_y) {
+	mouse_cursor->MoveRelative({ displacement_x, displacement_y });
+}
 
 //USBポートの制御モード切替用関数
 void SwitchEhci2Xhci(const pci::Device& xhc_dev) {
@@ -145,10 +150,8 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 		break;
 	}
 
-	//白塗りつぶし
-	for (int x = 0; x < frame_buffer_config.horizontal_resolution; ++x) {
-		for (int y = 0; y < frame_buffer_config.vertical_resolution; ++y) { pixel_writer->Write(x, y, { 255, 255, 255 }); }
-	}
+	const int kFrameWidth = frame_buffer_config.horizontal_resolution;
+	const int kFrameHeight = frame_buffer_config.vertical_resolution;
 
 	FillRectangle(*pixel_writer,
 		{ 0, 0 },
@@ -172,7 +175,11 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 	for (int i = 0, char c = '!'; c <= '~'; ++c, ++i) { WriteAscii(*pixel_writer, 8 * i, 50, c, { 0, 0, 0 }); }
 
 	//新規コンソール
-	console = new(console_buf) Console{ *pixel_writer, {0, 0, 0}, {255, 255, 255} };
+	console = new(console_buf) Console{
+		*pixel_writer, kDesktopFGColor, kDesktopBGColor
+	};
+	printk("Welcome to laplus OS!\n");
+	SetLogLevel(kWarn);
 
 	//printkを用いたコンソール表示
 	for (int i = 0; i < 27; ++i) { printk("printk: %d\n", i); }
@@ -222,7 +229,7 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 	Log(kDebug, "xHC mmio_base = %08lx\n", xhc_mmio_base);
 	//読み取り終了
 
-	sb::xhci::Controller xhc{ xhc_mmio_base };
+	usb::xhci::Controller xhc{ xhc_mmio_base };
 
 	//xHCの初期化
 	if (0x8086 == pci::ReadVendorId(*xhc_dev)) {
@@ -265,5 +272,9 @@ extern "C" void KernelMain(const FrameBufferConfig & frame_buffer_config) {
 	}
 	//処理終了
 
+	while (1) __asm__("hlt");
+}
+
+extern "C" void __cxa_pure_virtual() {
 	while (1) __asm__("hlt");
 }
