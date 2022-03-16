@@ -1,21 +1,26 @@
-#include  <Uefi.h>
-#include  <Library/UefiLib.h>
-#include  <Library/UefiBootServicesTableLib.h>
-#include  <Library/UefiRuntimeServicesTableLib.h>
-#include  <Library/PrintLib.h>
-#include  <Library/MemoryAllocationLib.h>
-#include  <Library/BaseMemoryLib.h>
-#include  <Protocol/LoadedImage.h>
-#include  <Protocol/SimpleFileSystem.h>
-#include  <Protocol/DiskIo2.h>
-#include  <Protocol/BlockIo.h>
-#include  <Guid/FileInfo.h>
+#include <Guid/FileInfo.h>
+#include <Library/BaseMemoryLib.h>
+#include <Library/MemoryAllocationLib.h>
+#include <Library/PrintLib.h>
+#include <Library/UefiBootServicesTableLib.h>
+#include <Library/UefiLib.h>
+#include <Library/UefiRuntimeLib.h>
+#include <Library/UefiRuntimeServicesTableLib.h>
+#include <Protocol/BlockIo.h>
+#include <Protocol/DiskIo2.h>
+#include <Protocol/GraphicsOutput.h>
+#include <Protocol/LoadedImage.h>
+#include <Protocol/SimpleFileSystem.h>
+#include <Uefi.h>
 #include  "frame_buffer_config.hpp"
 #include  "memory_map.hpp"
 #include  "elf.hpp"
 #include "loader_internal.h"
 
 void Halt(void) { while (1) __asm__("hlt"); }
+
+//n(ms)のdelay
+void Stall(unsigned long n) { gBS->Stall(n); }
 
 //メモリーマップのリスト
 struct MemoryMap {
@@ -130,6 +135,7 @@ EFI_STATUS OpenRootDir(EFI_HANDLE image_handle, EFI_FILE_PROTOCOL** root) {
 	return fs->OpenVolume(fs, root);
 }
 
+//GOP: Graphics Output Protocol
 EFI_STATUS OpenGOP(EFI_HANDLE image_handle,
 	EFI_GRAPHICS_OUTPUT_PROTOCOL** gop) {
 	EFI_STATUS status;
@@ -205,7 +211,7 @@ EFI_STATUS ReadFile(EFI_FILE_PROTOCOL* file, VOID** buffer) {
 	return file->Read(file, &file_size, *buffer);
 }
 
-//キー入力待ち
+//キー入力待ち,キー入力があれば返る
 EFI_STATUS WaitForPressAnyKey() {
 	EFI_STATUS status;
 
@@ -277,7 +283,48 @@ EFI_STATUS ReadBlocks(
 EFI_STATUS EFIAPI UefiMain(
 	EFI_HANDLE image_handle,
 	EFI_SYSTEM_TABLE* system_table) {
+
 	EFI_STATUS status;
+	gST->ConOut->ClearScreen(gST->ConOut);
+
+	//GOPの読み込み
+	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
+	status = OpenGOP(image_handle, &gop);
+	if (EFI_ERROR(status)) {
+		Print(L"failed to open GOP:%r\n", status);
+		Halt();
+	}
+	//読み込み終了
+
+	//解像度をSXGAに変更
+	int vga_mode = 0;
+	for (int i = 0; i < gop->Mode->MaxMode; ++i) {
+		UINTN gop_info_size;
+		EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* gop_info;
+		gop->QueryMode(gop, i, &gop_info_size, &gop_info);
+		if (gop_info->HorizontalResolution == RES_HORZ &&
+			gop_info->VerticalResolution == RES_VERT) {
+			vga_mode = i;
+			break;
+		}
+	}
+	//変更終了
+
+	//インチキBootwait
+	Print(L"Booting Laplus OS.");
+	for (int i = 0; i < 3; ++i) { 
+		Stall(); 
+		Print(L".");
+	}
+	//インチキ終了
+
+	//コンソールクリーン
+	gST->ConOut->ClearScreen(gST->ConOut);
+	gST->ConOut->SetAttribute(gST->ConOut, EFI_WHITE);
+	//クリーン終了
+
+	//ロゴの表示
+	PrintLogo();
 
 	CHAR8 memmap_buf[4096 * 4];
 	struct MemoryMap memmap = { sizeof(memmap_buf), memmap_buf, 0, 0, 0, 0 };
@@ -286,9 +333,6 @@ EFI_STATUS EFIAPI UefiMain(
 		Print(L"failed to get memory map: %r\n", status);
 		Halt();
 	}
-
-	//ロゴの表示
-	PrintLogo();
 
 	//UEFIイメージのrootディレクトリを開く
 	EFI_FILE_PROTOCOL* root_dir;
