@@ -345,7 +345,7 @@ EFI_STATUS EFIAPI UefiMain(
 	//インチキBootwait
 	Print(L"Booting Laplus OS.");
 	for (int i = 0; i < 3; ++i) {
-		Stall();
+		Stall(500000);
 		Print(L".");
 	}
 	//インチキ終了
