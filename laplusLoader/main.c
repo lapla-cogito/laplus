@@ -13,6 +13,7 @@
 #include  "frame_buffer_config.hpp"
 #include  "memory_map.hpp"
 #include  "elf.hpp"
+#include "loader_internal.h"
 
 void Halt(void) { while (1) __asm__("hlt"); }
 
@@ -204,6 +205,27 @@ EFI_STATUS ReadFile(EFI_FILE_PROTOCOL* file, VOID** buffer) {
 	return file->Read(file, &file_size, *buffer);
 }
 
+//キー入力待ち
+EFI_STATUS WaitForPressAnyKey() {
+	EFI_STATUS status;
+
+	Print(L"Press any key to continue:\n");
+
+	status = gBS->WaitForEvent(1, &(gST->ConIn->WaitForKey), 0);
+	if (EFI_ERROR(status)) {
+		PrintInfo(ERROR, L"WaitForEvent error: %r\n", status);
+		Halt();
+	}
+
+	EFI_INPUT_KEY key;
+	status = gST->ConIn->ReadKeyStroke(gST->ConIn, &key);
+	if (EFI_ERROR(status)) {
+		PrintInfo(ERROR, L"ReadKeyStroke error: %r\n", status);
+		Halt();
+	}
+	return EFI_SUCCESS;
+}
+
 EFI_STATUS OpenBlockIoProtocolForLoadedImage(
 	EFI_HANDLE image_handle, EFI_BLOCK_IO_PROTOCOL** block_io) {
 	EFI_STATUS status;
@@ -257,8 +279,6 @@ EFI_STATUS EFIAPI UefiMain(
 	EFI_SYSTEM_TABLE* system_table) {
 	EFI_STATUS status;
 
-	Print(L"Hello, laplus!\n");
-
 	CHAR8 memmap_buf[4096 * 4];
 	struct MemoryMap memmap = { sizeof(memmap_buf), memmap_buf, 0, 0, 0, 0 };
 	status = GetMemoryMap(&memmap);
@@ -267,6 +287,10 @@ EFI_STATUS EFIAPI UefiMain(
 		Halt();
 	}
 
+	//ロゴの表示
+	PrintLogo();
+
+	//UEFIイメージのrootディレクトリを開く
 	EFI_FILE_PROTOCOL* root_dir;
 	status = OpenRootDir(image_handle, &root_dir);
 	if (EFI_ERROR(status)) {
@@ -274,6 +298,7 @@ EFI_STATUS EFIAPI UefiMain(
 		Halt();
 	}
 
+	//メモリマップをファイルに追加
 	EFI_FILE_PROTOCOL* memmap_file;
 	status = root_dir->Open(
 		root_dir, &memmap_file, L"\\memmap",
@@ -449,6 +474,6 @@ EFI_STATUS EFIAPI UefiMain(
 
 	Print(L"All done!\n");
 
-	while (1);
+	Halt();
 	return EFI_SUCCESS;
 }
