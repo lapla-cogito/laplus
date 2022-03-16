@@ -7,12 +7,12 @@
 #include "graphics.hpp"
 #include "font.hpp"
 
-//IDT(���荞�݋L�q�q�e�[�u��)�̒�`.���荞�݋L�q�q��256���ׂĂ��ĔC�ӂ̊��荞�݃x�N�^��������悤�ɂȂ��Ă���(x86-64�ł�0-255�Ȃ̂�).
-//IDT�͊��荞�ݗv���ԍ��Ɗ��荞�݃n���h����Ή��t����\
+//IDT(割り込み記述子テーブル)の定義.割り込み記述子を256個並べていて任意の割り込みベクタを扱えるようになっている(x86-64では0-255なので).
+//IDTは割り込み要因番号と割り込みハンドラを対応付ける表
 std::array<InterruptDescriptor, 256> idt;
 
 
-//���荞�݋L�q�q(16bit�\����)�ɒl��ݒ�
+//割り込み記述子(16bit構造体)に値を設定
 void SetIDTEntry(InterruptDescriptor& desc,
 	InterruptDescriptorAttribute attr,
 	uint64_t offset,
