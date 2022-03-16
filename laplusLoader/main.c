@@ -12,9 +12,9 @@
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
 #include <Uefi.h>
-#include  "frame_buffer_config.hpp"
-#include  "memory_map.hpp"
-#include  "elf.hpp"
+#include "frame_buffer_config.hpp"
+#include "memory_map.hpp"
+#include "elf.hpp"
 #include "loader_internal.h"
 
 void Halt(void) { while (1) __asm__("hlt"); }
