@@ -21,12 +21,8 @@ extern "C" void main(int argc, char** argv) {
 
 	auto comp = [](const std::string& a, const std::string& b) {
 		for (int i = 0; i < std::min(a.length(), b.length()); ++i) {
-			if (a[i] < b[i]) {
-				return true;
-			}
-			else if (a[i] > b[i]) {
-				return false;
-			}
+			if (a[i] < b[i]) { return true; }
+			else if (a[i] > b[i]) { return false; }
 		}
 		return a.length() < b.length();
 	};
