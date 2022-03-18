@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <string>
 
+std::string ushi = "        \   ^__^\n         \  (oo)\\n            (__)\       )\/\\n                ||----w |\n                ||     ||\n";
+
 extern "C" void main(int argc, char** argv) {
 	if (argc < 1) {
 		fprintf(stderr, "Usage: %s <string>\n", argv[0]);
@@ -22,6 +24,12 @@ extern "C" void main(int argc, char** argv) {
 	//from here, output cowsay
 	printf(" ");
 	for (int i = 0; i < str.length() + 2; ++i) { printf("_"); }
-	printf(); puts();
+	printf(" "); puts();
+	
 	std::count << "< " << str << " >" << endl;
+
+	printf(" ");
+	for (int i = 0; i < str.length() + 2; ++i) { printf("-"); }
+	printf(" "); puts();
+	cout << ushi;
 }
