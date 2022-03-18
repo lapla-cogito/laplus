@@ -4,7 +4,7 @@
 #include <string>
 
 //うし
-std::string ushi = "        \   ^__^\n         \  (oo)\\n            (__)\       )\/\\n                ||----w |\n                ||     ||\n";
+std::string ushi = "        \\   ^__^\n         \\  (oo)\\\n            (__)\\       )\\/\\\n                ||----w |\n                ||     ||\n";
 
 extern "C" void main(int argc, char** argv) {
 	if (argc < 1) {
