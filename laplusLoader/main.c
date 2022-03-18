@@ -211,7 +211,7 @@ EFI_STATUS ReadFile(EFI_FILE_PROTOCOL* file, VOID** buffer) {
 	return file->Read(file, &file_size, *buffer);
 }
 
-//キー入力待ち,キー入力があれば返る
+//キー入力待ちをする関数,キー入力があれば返る
 EFI_STATUS WaitForPressAnyKey() {
 	EFI_STATUS status;
 
@@ -342,8 +342,16 @@ EFI_STATUS EFIAPI UefiMain(
 	}
 	//変更終了
 
+	//デバイスによっては解像度をSXGAに変更できない場合があるのでその場合はエラーメッセージを表示する
+	status = gop->SetMode(gop, vga_mode);
+	if (EFI_ERROR(status)) {
+		PrintInfo(ERROR, L"failed to change resolution: %r\n", status);
+		Halt();
+	}
+	//表示終了
+
 	//インチキBootwait
-	Print(L"Booting Laplus OS.");
+	Print(L"Booting laplus OS.");
 	for (int i = 0; i < 3; ++i) {
 		Stall(500000);
 		Print(L".");
