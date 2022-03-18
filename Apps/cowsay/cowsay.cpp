@@ -11,7 +11,8 @@ extern "C" void main(int argc, char** argv) {
 		exit(1);
 	}
 
-	std::string str;
+	std::string str = "";
+
 	//スペースが入っていた時用にconcat処理
 	if (argc == 1) { str = argv[1]; }
 	else {
@@ -25,7 +26,7 @@ extern "C" void main(int argc, char** argv) {
 	printf(" ");
 	for (int i = 0; i < str.length() + 2; ++i) { printf("_"); }
 	printf(" "); puts();
-	
+
 	std::count << "< " << str << " >" << endl;
 
 	printf(" ");
