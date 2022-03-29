@@ -84,7 +84,6 @@ namespace usb::xhci {
 	Error Device::Initialize() {
 		state_ = State::kBlank;
 		for (size_t i = 0; i < 31; ++i) { const DeviceContextIndex dci(i + 1); }
-
 		return MAKE_ERROR(Error::kSuccess);
 	}
 
@@ -95,9 +94,7 @@ namespace usb::xhci {
 	Ring* Device::AllocTransferRing(DeviceContextIndex index, size_t buf_size) {
 		int i = index.value - 1;
 		auto tr = AllocArray<Ring>(1, 64, 4096);
-		if (tr) {
-			tr->Initialize(buf_size);
-		}
+		if (tr) { tr->Initialize(buf_size); }
 		transfer_rings_[i] = tr;
 		return tr;
 	}
@@ -110,7 +107,6 @@ namespace usb::xhci {
 			ep_id.Address(), reinterpret_cast<uintptr_t>(buf), len);
 		if (ep_id.Number() < 0 || 15 < ep_id.Number()) { return MAKE_ERROR(Error::kInvalidEndpointNumber); }
 
-		//control endpoint must be dir_in=true
 		const DeviceContextIndex dci{ ep_id };
 
 		Ring* tr = transfer_rings_[dci.value - 1];
@@ -152,12 +148,13 @@ namespace usb::xhci {
 			ep_id.Address(), reinterpret_cast<uintptr_t>(buf), len);
 		if (ep_id.Number() < 0 || 15 < ep_id.Number()) { return MAKE_ERROR(Error::kInvalidEndpointNumber); }
 
-		//control endpoint must be dir_in=true
 		const DeviceContextIndex dci{ ep_id };
 
 		Ring* tr = transfer_rings_[dci.value - 1];
 
-		if (tr == nullptr) { return MAKE_ERROR(Error::kTransferRingNotSet); }
+		if (tr == nullptr) {
+			return MAKE_ERROR(Error::kTransferRingNotSet);
+		}
 
 		auto status = StatusStageTRB{};
 		status.bits.direction = true;
@@ -188,7 +185,6 @@ namespace usb::xhci {
 
 	Error Device::NormalIn(EndpointID ep_id, void* buf, int len) {
 		if (auto err = usb::Device::NormalIn(ep_id, buf, len)) { return err; }
-
 		return PushOneTransaction(ep_id, buf, len);
 	}
 
@@ -220,9 +216,8 @@ namespace usb::xhci {
 		if (!opt_setup_stage_trb) {
 			Log(kDebug, "No Corresponding Setup Stage for issuer %s\n",
 				kTRBTypeToName[issuer_trb->bits.trb_type]);
-			if (auto data_trb = TRBDynamicCast<DataStageTRB>(issuer_trb)) {
-				Log(kDebug, *data_trb);
-			}
+			if (auto data_trb = TRBDynamicCast<DataStageTRB>(issuer_trb)) { Log(kDebug, *data_trb); }
+
 			return MAKE_ERROR(Error::kNoCorrespondingSetupStage);
 		}
 		setup_stage_map_.Delete(issuer_trb);

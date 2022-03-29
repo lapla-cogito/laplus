@@ -317,7 +317,7 @@ namespace syscall {
 			default: return { file, 0 };
 			}
 		}
-	}
+	} // namespace
 
 	SYSCALL(OpenFile) {
 		const char* path = reinterpret_cast<const char*>(arg1);
@@ -398,7 +398,7 @@ namespace syscall {
 
 #undef SYSCALL
 
-}
+} // namespace syscall
 
 using SyscallFuncType = syscall::Result(uint64_t, uint64_t, uint64_t,
 	uint64_t, uint64_t, uint64_t);

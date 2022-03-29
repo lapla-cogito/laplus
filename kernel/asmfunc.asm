@@ -150,14 +150,14 @@ SwitchContext:  ; void SwitchContext(void* next_ctx, void* current_ctx);
 
 global RestoreContext
 RestoreContext:  ; void RestoreContext(void* task_context);
-    ; iret —p‚ÌƒXƒ^ƒbƒNƒtƒŒ[ƒ€
+    ; iret ç”¨ã®ã‚¹ã‚¿ãƒƒã‚¯ãƒ•ãƒ¬ãƒ¼ãƒ 
     push qword [rdi + 0x28] ; SS
     push qword [rdi + 0x70] ; RSP
     push qword [rdi + 0x10] ; RFLAGS
     push qword [rdi + 0x20] ; CS
     push qword [rdi + 0x08] ; RIP
 
-    ; ƒRƒ“ƒeƒLƒXƒg‚Ì•œ‹A
+    ; ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã®å¾©å¸°
     fxrstor [rdi + 0xc0]
 
     mov rax, [rdi + 0x00]
@@ -195,7 +195,7 @@ CallApp:  ; int CallApp(int argc, char** argv, uint16_t ss,
     push r13
     push r14
     push r15
-    mov [r9], rsp ; OS —p‚ÌƒXƒ^ƒbƒNƒ|ƒCƒ“ƒ^‚ğ•Û‘¶
+    mov [r9], rsp ; OS ç”¨ã®ã‚¹ã‚¿ãƒƒã‚¯ãƒã‚¤ãƒ³ã‚¿ã‚’ä¿å­˜
 
     push rdx  ; SS
     push r8   ; RSP
@@ -203,7 +203,7 @@ CallApp:  ; int CallApp(int argc, char** argv, uint16_t ss,
     push rdx  ; CS
     push rcx  ; RIP
     o64 retf
-    ; ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ªI—¹‚µ‚Ä‚à‚±‚±‚É‚Í—ˆ‚È‚¢
+    ; ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãŒçµ‚äº†ã—ã¦ã‚‚ã“ã“ã«ã¯æ¥ãªã„
 
 extern LAPICTimerOnInterrupt
 ; void LAPICTimerOnInterrupt(const TaskContext& ctx_stack);
@@ -213,7 +213,7 @@ IntHandlerLAPICTimer:  ; void IntHandlerLAPICTimer();
     push rbp
     mov rbp, rsp
 
-    ; ƒXƒ^ƒbƒNã‚É TaskContext Œ^‚Ì\‘¢‚ğ\’z‚·‚é
+    ; ã‚¹ã‚¿ãƒƒã‚¯ä¸Šã« TaskContext å‹ã®æ§‹é€ ã‚’æ§‹ç¯‰ã™ã‚‹
     sub rsp, 512
     fxsave [rsp]
     push r15
@@ -249,14 +249,14 @@ IntHandlerLAPICTimer:  ; void IntHandlerLAPICTimer();
     mov rdi, rsp
     call LAPICTimerOnInterrupt
 
-    add rsp, 8*8  ; CR3 ‚©‚ç GS ‚Ü‚Å‚ğ–³‹
+    add rsp, 8*8  ; CR3 ã‹ã‚‰ GS ã¾ã§ã‚’ç„¡è¦–
     pop rax
     pop rbx
     pop rcx
     pop rdx
     pop rdi
     pop rsi
-    add rsp, 16   ; RSP, RBP ‚ğ–³‹
+    add rsp, 16   ; RSP, RBP ã‚’ç„¡è¦–
     pop r8
     pop r9
     pop r10
@@ -293,13 +293,13 @@ SyscallEntry:  ; void SyscallEntry(void);
     push rcx  ; original RIP
     push r11  ; original RFLAGS
 
-    push rax  ; ƒVƒXƒeƒ€ƒR[ƒ‹”Ô†‚ğ•Û‘¶
+    push rax  ; ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒ¼ãƒ«ç•ªå·ã‚’ä¿å­˜
 
     mov rcx, r10
     and eax, 0x7fffffff
     mov rbp, rsp
 
-    ; ƒVƒXƒeƒ€ƒR[ƒ‹‚ğ OS —pƒXƒ^ƒbƒN‚ÅÀs‚·‚é‚½‚ß‚Ì€”õ
+    ; ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒ¼ãƒ«ã‚’ OS ç”¨ã‚¹ã‚¿ãƒƒã‚¯ã§å®Ÿè¡Œã™ã‚‹ãŸã‚ã®æº–å‚™
     and rsp, 0xfffffffffffffff0
     push rax
     push rdx
@@ -317,12 +317,12 @@ SyscallEntry:  ; void SyscallEntry(void);
     and rsp, 0xfffffffffffffff0
 
     call [syscall_table + 8 * eax]
-    ; rbx, r12-r15 ‚Í callee-saved ‚È‚Ì‚ÅŒÄ‚Ño‚µ‘¤‚Å•Û‘¶‚µ‚È‚¢
-    ; rax ‚Í–ß‚è’l—p‚È‚Ì‚ÅŒÄ‚Ño‚µ‘¤‚Å•Û‘¶‚µ‚È‚¢
+    ; rbx, r12-r15 ã¯ callee-saved ãªã®ã§å‘¼ã³å‡ºã—å´ã§ä¿å­˜ã—ãªã„
+    ; rax ã¯æˆ»ã‚Šå€¤ç”¨ãªã®ã§å‘¼ã³å‡ºã—å´ã§ä¿å­˜ã—ãªã„
 
     mov rsp, rbp
 
-    pop rsi  ; ƒVƒXƒeƒ€ƒR[ƒ‹”Ô†‚ğ•œ‹A
+    pop rsi  ; ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒ¼ãƒ«ç•ªå·ã‚’å¾©å¸°
     cmp esi, 0x80000002
     je  .exit
 
@@ -348,7 +348,7 @@ ExitApp:
     pop rbp
     pop rbx
 
-    ret  ; CallApp ‚ÌŸ‚Ìs‚É”ò‚Ô
+    ret  ; CallApp ã®æ¬¡ã®è¡Œã«é£›ã¶
 
 global InvalidateTLB  ; void InvalidateTLB(uint64_t addr);
 InvalidateTLB:

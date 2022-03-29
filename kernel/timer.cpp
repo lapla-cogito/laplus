@@ -14,8 +14,8 @@ namespace {
 void InitializeLAPICTimer() {
 	timer_manager = new TimerManager;
 
-	divide_config = 0b1011; //divide 1:1
-	lvt_timer = 0b001 << 16; //masked, one-shot
+	divide_config = 0b1011; // divide 1:1
+	lvt_timer = 0b001 << 16; // masked, one-shot
 
 	StartLAPICTimer();
 	acpi::WaitMilliseconds(100);
@@ -25,7 +25,7 @@ void InitializeLAPICTimer() {
 	lapic_timer_freq = static_cast<unsigned long>(elapsed) * 10;
 
 	divide_config = 0b1011; // divide 1:1
-	lvt_timer = (0b010 << 16) | InterruptVector::kLAPICTimer; //not-masked, periodic
+	lvt_timer = (0b010 << 16) | InterruptVector::kLAPICTimer; // not-masked, periodic
 	initial_count = lapic_timer_freq / kTimerFreq;
 }
 

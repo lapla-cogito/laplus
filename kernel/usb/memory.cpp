@@ -18,11 +18,14 @@ namespace usb {
 	uintptr_t alloc_ptr = reinterpret_cast<uintptr_t>(memory_pool);
 
 	void* AllocMem(size_t size, unsigned int alignment, unsigned int boundary) {
-		if (alignment > 0) { alloc_ptr = Ceil(alloc_ptr, alignment); }
-
+		if (alignment > 0) {
+			alloc_ptr = Ceil(alloc_ptr, alignment);
+		}
 		if (boundary > 0) {
 			auto next_boundary = Ceil(alloc_ptr, boundary);
-			if (next_boundary < alloc_ptr + size) { alloc_ptr = next_boundary; }
+			if (next_boundary < alloc_ptr + size) {
+				alloc_ptr = next_boundary;
+			}
 		}
 
 		if (reinterpret_cast<uintptr_t>(memory_pool) + kMemoryPoolSize

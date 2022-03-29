@@ -1,9 +1,7 @@
-//割り込み用プログラム
 #pragma once
 #include <array>
 #include <cstdint>
 #include <deque>
-
 #include "x86_descriptor.hpp"
 #include "message.hpp"
 
@@ -43,7 +41,7 @@ constexpr InterruptDescriptorAttribute MakeIDTAttr(
 	return attr;
 }
 
-const int kISTForTimer = 1; // index of the interrupt stack table
+const int kISTForTimer = 1;
 
 void SetIDTEntry(InterruptDescriptor& desc,
 	InterruptDescriptorAttribute attr,

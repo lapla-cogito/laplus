@@ -1,3 +1,4 @@
+//PCIバス制御用プログラム
 #include "pci.hpp"
 #include "asmfunc.h"
 #include "logger.hpp"
@@ -5,7 +6,7 @@
 namespace {
 	using namespace pci;
 
-	//CONFIG_ADDRESS用の32bit整数生成
+	//CONFIG_ADDRESS用の32 bit整数を生成
 	uint32_t MakeAddress(uint8_t bus, uint8_t device,
 		uint8_t function, uint8_t reg_addr) {
 		auto shl = [](uint32_t x, unsigned int bits) {
@@ -19,11 +20,9 @@ namespace {
 			| (reg_addr & 0xfcu);
 	}
 
-	//devices[num_device]に情報を書き込みnum_deviceをインクリメント
+	//devices[num_device]に情報を書き込み++num_deviceする
 	Error AddDevice(const Device& device) {
-		if (num_device == devices.size()) {
-			return MAKE_ERROR(Error::kFull);
-		}
+		if (num_device == devices.size()) { return MAKE_ERROR(Error::kFull); }
 
 		devices[num_device] = device;
 		++num_device;
@@ -32,7 +31,7 @@ namespace {
 
 	Error ScanBus(uint8_t bus);
 
-	//指定のファンクションをdevicesに追加.もしPCI-PCIブリッジならセカンダリバスに対してScanBusを実行
+	//指定のファンクションを devices に追加.もしPCI-PCIブリッジならセカンダリバスに対しScanBus()
 	Error ScanFunction(uint8_t bus, uint8_t device, uint8_t function) {
 		auto class_code = ReadClassCode(bus, device, function);
 		auto header_type = ReadHeaderType(bus, device, function);
@@ -42,7 +41,6 @@ namespace {
 		}
 
 		if (class_code.Match(0x06u, 0x04u)) {
-			// standard PCI-PCI bridge
 			auto bus_numbers = ReadBusNumbers(bus, device, function);
 			uint8_t secondary_bus = (bus_numbers >> 8) & 0xffu;
 			return ScanBus(secondary_bus);
@@ -51,7 +49,6 @@ namespace {
 		return MAKE_ERROR(Error::kSuccess);
 	}
 
-	//指定のデバイス番号の各ファンクションをスキャン.有効なファンクションを見つけたら ScanFunction を実行
 	Error ScanDevice(uint8_t bus, uint8_t device) {
 		if (auto err = ScanFunction(bus, device, 0)) {
 			return err;
@@ -71,7 +68,6 @@ namespace {
 		return MAKE_ERROR(Error::kSuccess);
 	}
 
-	//指定のバス番号の各デバイスをスキャン,有効なデバイスを見つけたらScanDevice()を実行
 	Error ScanBus(uint8_t bus) {
 		for (uint8_t device = 0; device < 32; ++device) {
 			if (ReadVendorId(bus, device, 0) == 0xffffu) {
@@ -84,9 +80,6 @@ namespace {
 		return MAKE_ERROR(Error::kSuccess);
 	}
 
-	/*指定されたMSIケーパビリティ構造を読み取る
-	 * devはMSIケーパビリティを読み込むPCIデバイス
-	 * cap_addrはMSIケーパビリティレジスタのコンフィグレーション空間アドレス*/
 	MSICapability ReadMSICapability(const Device& dev, uint8_t cap_addr) {
 		MSICapability msi_cap{};
 
@@ -109,10 +102,6 @@ namespace {
 		return msi_cap;
 	}
 
-	/*指定された MSI ケーパビリティ構造に書き込む
-	 * devはMSIケーパビリティを読み込むPCIデバイス
-	 * cap_addrはMSIケーパビリティレジスタのコンフィグレーション空間アドレス
-	 * msi_capは書き込まれる値*/
 	void WriteMSICapability(const Device& dev, uint8_t cap_addr,
 		const MSICapability& msi_cap) {
 		WriteConfReg(dev, cap_addr, msi_cap.header.data);

@@ -1,4 +1,3 @@
-//Transfer Request Block 関連
 #pragma once
 #include <cstdint>
 #include <array>
@@ -48,9 +47,13 @@ namespace usb::xhci {
 			bits.trb_type = Type;
 		}
 
-		void* Pointer() const { return reinterpret_cast<TRB*>(bits.data_buffer_pointer); }
+		void* Pointer() const {
+			return reinterpret_cast<TRB*>(bits.data_buffer_pointer);
+		}
 
-		void SetPointer(const void* p) { bits.data_buffer_pointer = reinterpret_cast<uint64_t>(p); }
+		void SetPointer(const void* p) {
+			bits.data_buffer_pointer = reinterpret_cast<uint64_t>(p);
+		}
 	};
 
 	union SetupStageTRB {
@@ -116,9 +119,13 @@ namespace usb::xhci {
 			bits.trb_type = Type;
 		}
 
-		void* Pointer() const { return reinterpret_cast<void*>(bits.data_buffer_pointer); }
+		void* Pointer() const {
+			return reinterpret_cast<void*>(bits.data_buffer_pointer);
+		}
 
-		void SetPointer(const void* p) { bits.data_buffer_pointer = reinterpret_cast<uint64_t>(p); }
+		void SetPointer(const void* p) {
+			bits.data_buffer_pointer = reinterpret_cast<uint64_t>(p);
+		}
 	};
 
 	union StatusStageTRB {
@@ -368,9 +375,13 @@ namespace usb::xhci {
 			return reinterpret_cast<TRB*>(bits.trb_pointer);
 		}
 
-		void SetPointer(const TRB* p) { bits.trb_pointer = reinterpret_cast<uint64_t>(p); }
+		void SetPointer(const TRB* p) {
+			bits.trb_pointer = reinterpret_cast<uint64_t>(p);
+		}
 
-		EndpointID EndpointID() const { return usb::EndpointID{ bits.endpoint_id }; }
+		EndpointID EndpointID() const {
+			return usb::EndpointID{ bits.endpoint_id };
+		}
 	};
 
 	union CommandCompletionEventTRB {
@@ -394,9 +405,13 @@ namespace usb::xhci {
 			bits.trb_type = Type;
 		}
 
-		TRB* Pointer() const { return reinterpret_cast<TRB*>(bits.command_trb_pointer << 4); }
+		TRB* Pointer() const {
+			return reinterpret_cast<TRB*>(bits.command_trb_pointer << 4);
+		}
 
-		void SetPointer(TRB* p) { bits.command_trb_pointer = reinterpret_cast<uint64_t>(p) >> 4; }
+		void SetPointer(TRB* p) {
+			bits.command_trb_pointer = reinterpret_cast<uint64_t>(p) >> 4;
+		}
 	};
 
 	union PortStatusChangeEventTRB {
@@ -421,14 +436,11 @@ namespace usb::xhci {
 		}
 	};
 
-	/* casts a trb pointer to other type of TRB.
-	 *
-	 *trb:=source pointer
-	 *returns casted pointer if the source TRB's type is equal to the resulting type. nullptr otherwise.
-	 */
 	template <class ToType, class FromType>
 	ToType* TRBDynamicCast(FromType* trb) {
-		if (ToType::Type == trb->bits.trb_type) { return reinterpret_cast<ToType*>(trb); }
+		if (ToType::Type == trb->bits.trb_type) {
+			return reinterpret_cast<ToType*>(trb);
+		}
 		return nullptr;
 	}
 }

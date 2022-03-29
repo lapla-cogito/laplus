@@ -1,3 +1,4 @@
+//フォント描画用
 #include "font.hpp"
 #include <cstdlib>
 #include <vector>
@@ -9,10 +10,12 @@ extern const uint8_t _binary_hankaku_bin_end;
 extern const uint8_t _binary_hankaku_bin_size;
 
 namespace {
+
 	const uint8_t* GetFont(char c) {
 		auto index = 16 * static_cast<unsigned int>(c);
-		if (index >= reinterpret_cast<uintptr_t>(&_binary_hankaku_bin_size)) { return nullptr; }
-
+		if (index >= reinterpret_cast<uintptr_t>(&_binary_hankaku_bin_size)) {
+			return nullptr;
+		}
 		return &_binary_hankaku_bin_start + index;
 	}
 
@@ -21,7 +24,9 @@ namespace {
 
 	Error RenderUnicode(char32_t c, FT_Face face) {
 		const auto glyph_index = FT_Get_Char_Index(face, c);
-		if (glyph_index == 0) { return MAKE_ERROR(Error::kFreeTypeError); }
+		if (glyph_index == 0) {
+			return MAKE_ERROR(Error::kFreeTypeError);
+		}
 
 		if (int err = FT_Load_Glyph(face, glyph_index,
 			FT_LOAD_RENDER | FT_LOAD_TARGET_MONO)) {
@@ -34,11 +39,14 @@ namespace {
 
 void WriteAscii(PixelWriter& writer, Vector2D<int> pos, char c, const PixelColor& color) {
 	const uint8_t* font = GetFont(c);
-	if (font == nullptr) { return; }
-
+	if (font == nullptr) {
+		return;
+	}
 	for (int dy = 0; dy < 16; ++dy) {
 		for (int dx = 0; dx < 8; ++dx) {
-			if ((font[dy] << dx) & 0x80u) { writer.Write(pos + Vector2D<int>{dx, dy}, color); }
+			if ((font[dy] << dx) & 0x80u) {
+				writer.Write(pos + Vector2D<int>{dx, dy}, color);
+			}
 		}
 	}
 }
@@ -165,13 +173,13 @@ Error WriteUnicode(PixelWriter& writer, Vector2D<int> pos,
 
 void InitializeFont() {
 	if (int err = FT_Init_FreeType(&ft_library)) {
-		Log(kError, "Failed to initialize FreeType library\n");
+		Log(kError, "failed to initialize FreeType library\n");
 		exit(1);
 	}
 
 	auto [entry, pos_slash] = fat::FindFile("/nihongo.ttf");
 	if (entry == nullptr || pos_slash) {
-		Log(kWarn, "No nihongo.ttf\n");
+		Log(kWarn, "no nihongo.ttf\n");
 		return;
 	}
 
@@ -179,7 +187,7 @@ void InitializeFont() {
 	nihongo_buf = new std::vector<uint8_t>(size);
 	if (LoadFile(nihongo_buf->data(), size, *entry) != size) {
 		delete nihongo_buf;
-		Log(kError, "Failed to load nihongo.ttf");
+		Log(kError, "failed to load nihongo.ttf");
 		exit(1);
 	}
 }

@@ -25,7 +25,17 @@ public:
 		kInvalidPhase,
 		kUnknownXHCISpeedID,
 		kNoWaiter,
-		kLastOfCode,
+		kNoPCIMSI,
+		kUnknownPixelFormat,
+		kNoSuchTask,
+		kInvalidFormat,
+		kFrameTooSmall,
+		kInvalidFile,
+		kIsDirectory,
+		kNoSuchEntry,
+		kFreeTypeError,
+		kEndpointNotInCharge,
+		kLastOfCode,  // この列挙子は常に最後に配置する
 	};
 
 private:
@@ -50,6 +60,16 @@ private:
 	  "kInvalidPhase",
 	  "kUnknownXHCISpeedID",
 	  "kNoWaiter",
+	  "kNoPCIMSI",
+	  "kUnknownPixelFormat",
+	  "kNoSuchTask",
+	  "kInvalidFormat",
+	  "kFrameTooSmall",
+	  "kInvalidFile",
+	  "kIsDirectory",
+	  "kNoSuchEntry",
+	  "kFreeTypeError",
+	  "kEndpointNotInCharge",
 	};
 	static_assert(Error::Code::kLastOfCode == code_names_.size());
 
@@ -84,10 +104,8 @@ private:
 
 #define MAKE_ERROR(code) Error((code), __FILE__, __LINE__)
 
-//値とエラーコードをセットにする(BAR0の読み取りとかで使用)
 template <class T>
 struct WithError {
 	T value;
 	Error error;
 };
-//セット化終了

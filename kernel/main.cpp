@@ -1,4 +1,4 @@
-//カーネル本体
+//カーネル
 #include <cstdint>
 #include <cstddef>
 #include <cstdio>
@@ -31,7 +31,6 @@
 #include "fat.hpp"
 #include "syscall.hpp"
 #include "uefi.hpp"
-
 
 __attribute__((format(printf, 1, 2))) int printk(const char* format, ...) {
 	va_list ap;
@@ -114,6 +113,7 @@ void InputTextWindow(char c) {
 
 alignas(16) uint8_t kernel_main_stack[1024 * 1024];
 
+//タスクバー右端に現在時刻を表示する
 void TaskWallclock(uint64_t task_id, int64_t data) {
 	__asm__("cli");
 	Task& task = task_manager->CurrentTask();
@@ -229,7 +229,7 @@ extern "C" void KernelMainNewStack(
 
 	char str[128];
 
-	while (1) {
+	while (true) {
 		__asm__("cli");
 		const auto tick = timer_manager->CurrentTick();
 		__asm__("sti");
@@ -286,7 +286,7 @@ extern "C" void KernelMainNewStack(
 					__asm__("sti");
 				}
 				else {
-					printk("key push not handled: keycode %02x, ascii %02x\n",
+					printk("Key push not handled: keycode %02x, ascii %02x\n",
 						msg->arg.keyboard.keycode,
 						msg->arg.keyboard.ascii);
 				}

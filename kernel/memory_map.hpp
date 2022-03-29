@@ -1,4 +1,3 @@
-//メモリマップ関連
 #pragma once
 #include <stdint.h>
 

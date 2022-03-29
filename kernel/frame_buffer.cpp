@@ -1,7 +1,6 @@
 #include "frame_buffer.hpp"
 
 namespace {
-
 	int BytesPerPixel(PixelFormat format) {
 		switch (format) {
 		case kPixelRGBResv8BitPerColor: return 4;

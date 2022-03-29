@@ -17,7 +17,6 @@
 #include "usb/xhci/xhci.hpp"
 
 namespace {
-
 	WithError<int> MakeArgVector(char* command, char* first_arg,
 		char** argv, int argv_len, char* argbuf, int argbuf_len) {
 		int argc = 0;
@@ -35,22 +34,36 @@ namespace {
 			return MAKE_ERROR(Error::kSuccess);
 		};
 
-		if (auto err = push_to_argv(command)) { return { argc, err }; }
+		if (auto err = push_to_argv(command)) {
+			return { argc, err };
+		}
 
-		if (!first_arg) { return { argc, MAKE_ERROR(Error::kSuccess) }; }
+		if (!first_arg) {
+			return { argc, MAKE_ERROR(Error::kSuccess) };
+		}
 
 		char* p = first_arg;
 		while (true) {
-			while (isspace(p[0])) { ++p; }
-			if (p[0] == 0) { break; }
+			while (isspace(p[0])) {
+				++p;
+			}
+			if (p[0] == 0) {
+				break;
+			}
 			const char* arg = p;
 
-			while (p[0] != 0 && !isspace(p[0])) { ++p; }
+			while (p[0] != 0 && !isspace(p[0])) {
+				++p;
+			}
 			// here: p[0] == 0 || isspace(p[0])
 			const bool is_end = p[0] == 0;
 			p[0] = 0;
-			if (auto err = push_to_argv(arg)) { return { argc, err }; }
-			if (is_end) { break; }
+			if (auto err = push_to_argv(arg)) {
+				return { argc, err };
+			}
+			if (is_end) {
+				break;
+			}
 			++p;
 		}
 
@@ -227,7 +240,7 @@ namespace {
 		return FindCommand(command, apps_entry.first->FirstCluster());
 	}
 
-}
+} // namespace
 
 std::map<fat::DirectoryEntry*, AppLoadInfo>* app_loads;
 
@@ -639,7 +652,7 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
 		return { 0, err };
 	}
 	auto argv = reinterpret_cast<char**>(args_frame_addr.value);
-	int argv_len = 32; // argv=8*32=256bytes
+	int argv_len = 32; // argv = 8x32 = 256 bytes
 	auto argbuf = reinterpret_cast<char*>(args_frame_addr.value + sizeof(char*) * argv_len);
 	int argbuf_len = 4096 - sizeof(char*) * argv_len;
 	auto argc = MakeArgVector(command, first_arg, argv, argv_len, argbuf, argbuf_len);
@@ -647,11 +660,10 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
 		return { 0, argc.error };
 	}
 
-	//appstackを増加
+	// #@@range_begin(increase_appstack)
 	const int stack_size = 16 * 4096;
 	LinearAddress4Level stack_frame_addr{ 0xffff'ffff'ffff'f000 - stack_size };
-	//増加終了
-
+	// #@@range_end(increase_appstack)
 	if (auto err = SetupPageMaps(stack_frame_addr, stack_size / 4096)) {
 		return { 0, err };
 	}
@@ -674,13 +686,16 @@ WithError<int> Terminal::ExecuteFile(fat::DirectoryEntry& file_entry,
 	task.Files().clear();
 	task.FileMaps().clear();
 
-	if (auto err = CleanPageMaps(LinearAddress4Level{ 0xffff'8000'0000'0000 })) { return { ret, err }; }
-
+	if (auto err = CleanPageMaps(LinearAddress4Level{ 0xffff'8000'0000'0000 })) {
+		return { ret, err };
+	}
 	return { ret, FreePML4(task) };
 }
 
 void Terminal::Print(char32_t c) {
-	if (!show_window_) { return; }
+	if (!show_window_) {
+		return;
+	}
 
 	auto newline = [this]() {
 		cursor_.x = 0;
@@ -696,14 +711,16 @@ void Terminal::Print(char32_t c) {
 		newline();
 	}
 	else if (IsHankaku(c)) {
-		if (cursor_.x == kColumns) { newline(); }
-
+		if (cursor_.x == kColumns) {
+			newline();
+		}
 		WriteUnicode(*window_->Writer(), CalcCursorPos(), c, { 255, 255, 255 });
 		++cursor_.x;
 	}
 	else {
-		if (cursor_.x >= kColumns - 1) { newline(); }
-
+		if (cursor_.x >= kColumns - 1) {
+			newline();
+		}
 		WriteUnicode(*window_->Writer(), CalcCursorPos(), c, { 255, 255, 255 });
 		cursor_.x += 2;
 	}
@@ -764,7 +781,9 @@ Rectangle<int> Terminal::HistoryUpDown(int direction) {
 	FillRectangle(*window_->Writer(), draw_area.pos, draw_area.size, { 0, 0, 0 });
 
 	const char* history = "";
-	if (cmd_history_index_ >= 0) { history = &cmd_history_[cmd_history_index_][0]; }
+	if (cmd_history_index_ >= 0) {
+		history = &cmd_history_[cmd_history_index_][0];
+	}
 
 	strcpy(&linebuf_[0], history);
 	linebuf_index_ = strlen(history);
@@ -777,7 +796,9 @@ Rectangle<int> Terminal::HistoryUpDown(int direction) {
 void TaskTerminal(uint64_t task_id, int64_t data) {
 	const auto term_desc = reinterpret_cast<TerminalDescriptor*>(data);
 	bool show_window = true;
-	if (term_desc) { show_window = term_desc->show_window; }
+	if (term_desc) {
+		show_window = term_desc->show_window;
+	}
 
 	__asm__("cli");
 	Task& task = task_manager->CurrentTask();
@@ -876,8 +897,9 @@ size_t TerminalFileDescriptor::Read(void* buf, size_t len) {
 		}
 		__asm__("sti");
 
-		if (msg->type != Message::kKeyPush || !msg->arg.keyboard.press) { continue; }
-
+		if (msg->type != Message::kKeyPush || !msg->arg.keyboard.press) {
+			continue;
+		}
 		if (msg->arg.keyboard.modifier & (kLControlBitMask | kRControlBitMask)) {
 			char s[3] = "^ ";
 			s[1] = toupper(msg->arg.keyboard.ascii);
@@ -906,7 +928,6 @@ size_t TerminalFileDescriptor::Load(void* buf, size_t len, size_t offset) {
 }
 
 PipeDescriptor::PipeDescriptor(Task& task) : task_{ task } {
-
 }
 
 size_t PipeDescriptor::Read(void* buf, size_t len) {
@@ -931,7 +952,9 @@ size_t PipeDescriptor::Read(void* buf, size_t len) {
 		}
 		__asm__("sti");
 
-		if (msg->type != Message::kPipe) { continue; }
+		if (msg->type != Message::kPipe) {
+			continue;
+		}
 
 		if (msg->arg.pipe.len == 0) {
 			closed_ = true;

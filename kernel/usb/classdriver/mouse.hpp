@@ -1,4 +1,3 @@
-//HIDのマウスのベースクラスドライバ
 #pragma once
 #include <functional>
 #include "usb/classdriver/hid.hpp"

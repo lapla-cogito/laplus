@@ -1,3 +1,4 @@
+//コンソール描画のプログラムを集めたファイル
 #include "console.hpp"
 #include <cstring>
 #include "font.hpp"
@@ -20,9 +21,7 @@ void Console::PutString(const char* s) {
 		}
 		++s;
 	}
-	if (layer_manager) {
-		layer_manager->Draw(layer_id_);
-	}
+	if (layer_manager) { layer_manager->Draw(layer_id_); }
 }
 
 void Console::SetWriter(PixelWriter* writer) {
@@ -35,9 +34,8 @@ void Console::SetWriter(PixelWriter* writer) {
 }
 
 void Console::SetWindow(const std::shared_ptr<Window>& window) {
-	if (window == window_) {
-		return;
-	}
+	if (window == window_) { return; }
+
 	window_ = window;
 	writer_ = window->Writer();
 	Refresh();

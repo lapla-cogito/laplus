@@ -10,7 +10,7 @@ namespace usb::xhci {
 		struct {
 			uint32_t route_string : 20;
 			uint32_t speed : 4;
-			uint32_t : 1; //reserved
+			uint32_t : 1; // reserved
 			uint32_t mtt : 1;
 			uint32_t hub : 1;
 			uint32_t context_entries : 5;
@@ -19,11 +19,11 @@ namespace usb::xhci {
 			uint32_t root_hub_port_num : 8;
 			uint32_t num_ports : 8;
 
-			//TT : Transaction Translator
+			// TT : Transaction Translator
 			uint32_t tt_hub_slot_id : 8;
 			uint32_t tt_port_num : 8;
 			uint32_t ttt : 2;
-			uint32_t : 4; //reserved
+			uint32_t : 4; // reserved
 			uint32_t interrupter_target : 10;
 
 			uint32_t usb_device_address : 8;
@@ -101,18 +101,11 @@ namespace usb::xhci {
 		SlotContext slot_context;
 		EndpointContext ep_contexts[31];
 
-		/*Enable the slot context.
-		@return Pointer to the slot context enabled.
-		*/
 		SlotContext* EnableSlotContext() {
 			input_control_context.add_context_flags |= 1;
 			return &slot_context;
 		}
 
-		/*Enable an endpoint.
-		dci:=Device Context Index(1-31)
-		@return Pointer to the endpoint context enabled.
-		*/
 		EndpointContext* EnableEndpoint(DeviceContextIndex dci) {
 			input_control_context.add_context_flags |= 1u << dci.value;
 			return &ep_contexts[dci.value - 1];

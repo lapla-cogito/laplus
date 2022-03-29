@@ -1,4 +1,3 @@
-//xHCIのレジスタ定義
 #pragma once
 #include "register.hpp"
 
@@ -166,10 +165,13 @@ namespace usb::xhci {
 			uint64_t device_context_base_address_array_pointer : 26;
 		} __attribute__((packed)) bits;
 
-		uint64_t Pointer() const { return bits.device_context_base_address_array_pointer << 6; }
+		uint64_t Pointer() const {
+			return bits.device_context_base_address_array_pointer << 6;
+		}
 
-		void SetPointer(uint64_t value) { bits.device_context_base_address_array_pointer = value >> 6; }
-
+		void SetPointer(uint64_t value) {
+			bits.device_context_base_address_array_pointer = value >> 6;
+		}
 	} __attribute__((packed));
 
 	union CONFIG_Bitmap {
@@ -287,10 +289,13 @@ namespace usb::xhci {
 			uint32_t : 16;
 		} __attribute__((packed)) bits;
 
-		uint16_t Size() const { return bits.event_ring_segment_table_size; }
+		uint16_t Size() const {
+			return bits.event_ring_segment_table_size;
+		}
 
-		void SetSize(uint16_t value) { bits.event_ring_segment_table_size = value; }
-
+		void SetSize(uint16_t value) {
+			bits.event_ring_segment_table_size = value;
+		}
 	} __attribute__((packed));
 
 	union ERSTBA_Bitmap {
@@ -300,10 +305,13 @@ namespace usb::xhci {
 			uint64_t event_ring_segment_table_base_address : 58;
 		} __attribute__((packed)) bits;
 
-		uint64_t Pointer() const { return bits.event_ring_segment_table_base_address << 6; }
+		uint64_t Pointer() const {
+			return bits.event_ring_segment_table_base_address << 6;
+		}
 
-		void SetPointer(uint64_t value) { bits.event_ring_segment_table_base_address = value >> 6; }
-
+		void SetPointer(uint64_t value) {
+			bits.event_ring_segment_table_base_address = value >> 6;
+		}
 	} __attribute__((packed));
 
 	union ERDP_Bitmap {
@@ -314,9 +322,13 @@ namespace usb::xhci {
 			uint64_t event_ring_dequeue_pointer : 60;
 		} __attribute__((packed)) bits;
 
-		uint64_t Pointer() const { return bits.event_ring_dequeue_pointer << 4; }
+		uint64_t Pointer() const {
+			return bits.event_ring_dequeue_pointer << 4;
+		}
 
-		void SetPointer(uint64_t value) { bits.event_ring_dequeue_pointer = value >> 4; }
+		void SetPointer(uint64_t value) {
+			bits.event_ring_dequeue_pointer = value >> 4;
+		}
 	} __attribute__((packed));
 
 	struct InterrupterRegisterSet {
@@ -353,7 +365,6 @@ namespace usb::xhci {
 
 	using DoorbellRegisterArray = ArrayWrapper<DoorbellRegister>;
 
-	//拡張レジスタの共通ヘッダ構造
 	union ExtendedRegister_Bitmap {
 		uint32_t data[1];
 		struct {
@@ -389,7 +400,6 @@ namespace usb::xhci {
 		const Iterator first_;
 	};
 
-	//個別の拡張レジスタ定義
 	union USBLEGSUP_Bitmap {
 		uint32_t data[1];
 		struct {

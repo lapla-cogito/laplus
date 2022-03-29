@@ -1,4 +1,3 @@
-//セグメンテーション用プログラム
 #pragma once
 #include <array>
 #include <cstdint>

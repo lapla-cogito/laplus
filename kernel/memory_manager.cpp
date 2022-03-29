@@ -15,19 +15,19 @@ WithError<FrameID> BitmapMemoryManager::Allocate(size_t num_frames) {
 				return { kNullFrame, MAKE_ERROR(Error::kNoEnoughMemory) };
 			}
 			if (GetBit(FrameID{ start_frame_id + i })) {
-				//"start_frame_id + i" にあるフレームは割り当て済み
+				// "start_frame_id + i" にあるフレームは割り当て済み
 				break;
 			}
 		}
 		if (i == num_frames) {
-			//num_frames 分の空きが見つかった
+			// num_frames 分の空きが見つかった
 			MarkAllocated(FrameID{ start_frame_id }, num_frames);
 			return {
 			  FrameID{start_frame_id},
 			  MAKE_ERROR(Error::kSuccess),
 			};
 		}
-		//次のフレームから再検索
+		// 次のフレームから再検索
 		start_frame_id += i + 1;
 	}
 }

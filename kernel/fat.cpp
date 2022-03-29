@@ -1,4 +1,5 @@
 #include "fat.hpp"
+
 #include <algorithm>
 #include <cstring>
 #include <cctype>
@@ -189,17 +190,11 @@ namespace fat {
 		const char* dot_pos = strrchr(name, '.');
 		memset(entry.name, ' ', 8 + 3);
 		if (dot_pos) {
-			for (int i = 0; i < 8 && i < dot_pos - name; ++i) {
-				entry.name[i] = toupper(name[i]);
-			}
-			for (int i = 0; i < 3 && dot_pos[i + 1]; ++i) {
-				entry.name[8 + i] = toupper(dot_pos[i + 1]);
-			}
+			for (int i = 0; i < 8 && i < dot_pos - name; ++i) { entry.name[i] = toupper(name[i]); }
+			for (int i = 0; i < 3 && dot_pos[i + 1]; ++i) { entry.name[8 + i] = toupper(dot_pos[i + 1]); }
 		}
 		else {
-			for (int i = 0; i < 8 && name[i]; ++i) {
-				entry.name[i] = toupper(name[i]);
-			}
+			for (int i = 0; i < 8 && name[i]; ++i) { entry.name[i] = toupper(name[i]); }
 		}
 	}
 
@@ -209,7 +204,9 @@ namespace fat {
 
 		if (const char* slash_pos = strrchr(path, '/')) {
 			filename = &slash_pos[1];
-			if (slash_pos[1] == '\0') { return { nullptr, MAKE_ERROR(Error::kIsDirectory) }; }
+			if (slash_pos[1] == '\0') {
+				return { nullptr, MAKE_ERROR(Error::kIsDirectory) };
+			}
 
 			char parent_dir_name[slash_pos - path + 1];
 			strncpy(parent_dir_name, path, slash_pos - path);
@@ -225,8 +222,9 @@ namespace fat {
 		}
 
 		auto dir = fat::AllocateEntry(parent_dir_cluster);
-		if (dir == nullptr) { return { nullptr, MAKE_ERROR(Error::kNoEnoughMemory) }; }
-
+		if (dir == nullptr) {
+			return { nullptr, MAKE_ERROR(Error::kNoEnoughMemory) };
+		}
 		fat::SetFileName(*dir, filename);
 		dir->file_size = 0;
 		return { dir, MAKE_ERROR(Error::kSuccess) };
@@ -242,8 +240,9 @@ namespace fat {
 			}
 		}
 
-		if (n > 1) { ExtendCluster(first_cluster, n - 1); }
-
+		if (n > 1) {
+			ExtendCluster(first_cluster, n - 1);
+		}
 		return first_cluster;
 	}
 
@@ -252,8 +251,9 @@ namespace fat {
 	}
 
 	size_t FileDescriptor::Read(void* buf, size_t len) {
-		if (rd_cluster_ == 0) { rd_cluster_ = fat_entry_.FirstCluster(); }
-
+		if (rd_cluster_ == 0) {
+			rd_cluster_ = fat_entry_.FirstCluster();
+		}
 		uint8_t* buf8 = reinterpret_cast<uint8_t*>(buf);
 		len = std::min(len, fat_entry_.file_size - rd_off_);
 

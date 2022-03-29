@@ -40,10 +40,14 @@ void ResetCR3() {
 namespace {
 
 	WithError<PageMapEntry*> SetNewPageMapIfNotPresent(PageMapEntry& entry) {
-		if (entry.bits.present) { return { entry.Pointer(), MAKE_ERROR(Error::kSuccess) }; }
+		if (entry.bits.present) {
+			return { entry.Pointer(), MAKE_ERROR(Error::kSuccess) };
+		}
 
 		auto [child_map, err] = NewPageMap();
-		if (err) { return { nullptr, err }; }
+		if (err) {
+			return { nullptr, err };
+		}
 
 		entry.SetPointer(child_map);
 		entry.bits.present = 1;
@@ -77,8 +81,9 @@ namespace {
 				num_4kpages = num_remain_pages;
 			}
 
-			//last
-			if (entry_index == 511) { break; }
+			if (entry_index == 511) {
+				break;
+			}
 
 			addr.SetPart(page_map_level, entry_index + 1);
 			for (int level = page_map_level - 1; level >= 1; --level) {
@@ -93,7 +98,9 @@ namespace {
 		PageMapEntry* page_map, int page_map_level, LinearAddress4Level addr) {
 		for (int i = addr.Part(page_map_level); i < 512; ++i) {
 			auto entry = page_map[i];
-			if (!entry.bits.present) { continue; }
+			if (!entry.bits.present) {
+				continue;
+			}
 
 			if (page_map_level > 1) {
 				if (auto err = CleanPageMap(entry.Pointer(), page_map_level - 1, addr)) {
@@ -163,7 +170,7 @@ namespace {
 			LinearAddress4Level{ causal_addr }, p);
 	}
 
-}
+} // namespace
 
 WithError<PageMapEntry*> NewPageMap() {
 	auto frame = memory_manager->Allocate(1);
@@ -207,11 +214,14 @@ Error CopyPageMaps(PageMapEntry* dest, PageMapEntry* src, int part, int start) {
 			continue;
 		}
 		auto [table, err] = NewPageMap();
-		if (err) { return err; }
-
+		if (err) {
+			return err;
+		}
 		dest[i] = src[i];
 		dest[i].SetPointer(table);
-		if (auto err = CopyPageMaps(table, src[i].Pointer(), part - 1, 0)) { return err; }
+		if (auto err = CopyPageMaps(table, src[i].Pointer(), part - 1, 0)) {
+			return err;
+		}
 	}
 	return MAKE_ERROR(Error::kSuccess);
 }

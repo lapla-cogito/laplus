@@ -1,4 +1,3 @@
-//固定長配列を用いた簡易なマップ実装
 #pragma once
 #include <array>
 #include <optional>
@@ -9,7 +8,9 @@ namespace usb {
 	public:
 		std::optional<V> Get(const K& key) const {
 			for (int i = 0; i < table_.size(); ++i) {
-				if (auto opt_k = table_[i].first; opt_k && opt_k.value() == key) { return table_[i].second; }
+				if (auto opt_k = table_[i].first; opt_k && opt_k.value() == key) {
+					return table_[i].second;
+				}
 			}
 			return std::nullopt;
 		}

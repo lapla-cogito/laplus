@@ -24,7 +24,7 @@ namespace {
 namespace acpi {
 	bool RSDP::IsValid() const {
 		if (strncmp(this->signature, "RSD PTR ", 8) != 0) {
-			Log(kDebug, "Invalid signature: %.8s\n", this->signature);
+			Log(kDebug, "invalid signature: %.8s\n", this->signature);
 			return false;
 		}
 		if (this->revision != 2) {
@@ -32,11 +32,11 @@ namespace acpi {
 			return false;
 		}
 		if (auto sum = SumBytes(this, 20); sum != 0) {
-			Log(kDebug, "Sum of 20 bytes must be 0: %d\n", sum);
+			Log(kDebug, "sum of 20 bytes must be 0: %d\n", sum);
 			return false;
 		}
 		if (auto sum = SumBytes(this, 36); sum != 0) {
-			Log(kDebug, "Sum of 36 bytes must be 0: %d\n", sum);
+			Log(kDebug, "sum of 36 bytes must be 0: %d\n", sum);
 			return false;
 		}
 		return true;
@@ -44,11 +44,11 @@ namespace acpi {
 
 	bool DescriptionHeader::IsValid(const char* expected_signature) const {
 		if (strncmp(this->signature, expected_signature, 4) != 0) {
-			Log(kDebug, "Invalid signature: %.4s\n", this->signature);
+			Log(kDebug, "invalid signature: %.4s\n", this->signature);
 			return false;
 		}
 		if (auto sum = SumBytes(this, this->length); sum != 0) {
-			Log(kDebug, "Sum of %u bytes must be 0: %d\n", this->length, sum);
+			Log(kDebug, "sum of %u bytes must be 0: %d\n", this->length, sum);
 			return false;
 		}
 		return true;
@@ -105,4 +105,5 @@ namespace acpi {
 			exit(1);
 		}
 	}
+
 }

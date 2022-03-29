@@ -23,7 +23,7 @@ private:
 	uint64_t task_id_;
 };
 
-//タイマー優先度を比較する演算子.タイムアウトが遠いほど優先度が低くなる
+//タイマー優先度を比較する.タイムアウトが遠いほど優先度が低い
 inline bool operator<(const Timer& lhs, const Timer& rhs) {
 	return lhs.Timeout() > rhs.Timeout();
 }

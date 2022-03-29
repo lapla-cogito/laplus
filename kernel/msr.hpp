@@ -1,5 +1,4 @@
 #pragma once
-
 #include <cstdint>
 
 static constexpr uint32_t kIA32_EFER = 0xc0000080;

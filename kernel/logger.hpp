@@ -1,4 +1,4 @@
-//カーネルログ
+//カーネルロガー
 #pragma once
 
 enum LogLevel {
@@ -8,6 +8,9 @@ enum LogLevel {
 	kDebug = 7,
 };
 
-void SetLogLevel(LogLevel level);
+//グローバルなログ優先度の閾値
+void SetLogLevel(enum LogLevel level);
 
-int Log(LogLevel level, const char* format, ...);
+//ログを記録.指定の優先度に基づく.
+int Log(enum LogLevel level, const char* format, ...)
+__attribute__((format(printf, 2, 3)));

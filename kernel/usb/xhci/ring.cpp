@@ -1,21 +1,27 @@
 #include "usb/xhci/ring.hpp"
-#include "usb/memory.hpp"
 #include <cstring>
+#include "usb/memory.hpp"
 
 namespace usb::xhci {
 	Ring::~Ring() {
-		if (buf_ != nullptr) { FreeMem(buf_); }
+		if (buf_ != nullptr) {
+			FreeMem(buf_);
+		}
 	}
 
 	Error Ring::Initialize(size_t buf_size) {
-		if (buf_ != nullptr) { FreeMem(buf_); }
+		if (buf_ != nullptr) {
+			FreeMem(buf_);
+		}
 
 		cycle_bit_ = true;
 		write_index_ = 0;
 		buf_size_ = buf_size;
 
 		buf_ = AllocArray<TRB>(buf_size_, 64, 64 * 1024);
-		if (buf_ == nullptr) { return MAKE_ERROR(Error::kNoEnoughMemory); }
+		if (buf_ == nullptr) {
+			return MAKE_ERROR(Error::kNoEnoughMemory);
+		}
 		memset(buf_, 0, buf_size_ * sizeof(TRB));
 
 		return MAKE_ERROR(Error::kSuccess);
@@ -23,7 +29,7 @@ namespace usb::xhci {
 
 	void Ring::CopyToLast(const std::array<uint32_t, 4>& data) {
 		for (int i = 0; i < 3; ++i) {
-			//data[0..2] must be written prior to data[3].
+			// data[0..2] must be written prior to data[3].
 			buf_[write_index_].data[i] = data[i];
 		}
 		buf_[write_index_].data[3]
@@ -49,14 +55,18 @@ namespace usb::xhci {
 
 	Error EventRing::Initialize(size_t buf_size,
 		InterrupterRegisterSet* interrupter) {
-		if (buf_ != nullptr) { FreeMem(buf_); }
+		if (buf_ != nullptr) {
+			FreeMem(buf_);
+		}
 
 		cycle_bit_ = true;
 		buf_size_ = buf_size;
 		interrupter_ = interrupter;
 
 		buf_ = AllocArray<TRB>(buf_size_, 64, 64 * 1024);
-		if (buf_ == nullptr) { return MAKE_ERROR(Error::kNoEnoughMemory); }
+		if (buf_ == nullptr) {
+			return MAKE_ERROR(Error::kNoEnoughMemory);
+		}
 		memset(buf_, 0, buf_size_ * sizeof(TRB));
 
 		erst_ = AllocArray<EventRingSegmentTableEntry>(1, 64, 64 * 1024);

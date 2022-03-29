@@ -2,7 +2,6 @@
 #include <memory>
 #include "graphics.hpp"
 
-//マウスカーソルの描画と移動を制御するクラス
 const int kMouseCursorWidth = 15;
 const int kMouseCursorHeight = 24;
 const PixelColor kMouseTransparentColor{ 0, 0, 1 };

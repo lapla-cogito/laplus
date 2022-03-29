@@ -12,10 +12,10 @@ namespace {
 			FillRectangle(writer, pos, size, c);
 		};
 
-		//fill main box
+		// fill main box
 		fill_rect(pos + Vector2D<int>{1, 1}, size - Vector2D<int>{2, 2}, background);
 
-		//draw border lines
+		// draw border lines
 		fill_rect(pos, { size.x, 1 }, border_dark);
 		fill_rect(pos, { 1, size.y }, border_dark);
 		fill_rect(pos + Vector2D<int>{0, size.y}, { size.x, 1 }, border_light);

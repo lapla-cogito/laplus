@@ -4,7 +4,7 @@
 #include "task.hpp"
 
 namespace {
-	//ã‚­ãƒ¼ãƒãƒƒãƒ—
+	//ƒL[ƒR[ƒhƒ}ƒbƒv
 	const char keycode_map[256] = {
 	  0,    0,    0,    0,    'a',  'b',  'c',  'd', // 0
 	  'e',  'f',  'g',  'h',  'i',  'j',  'k',  'l', // 8
@@ -26,7 +26,7 @@ namespace {
 	  0,    '\\', 0,    0,    0,    0,    0,    0,   // 136
 	};
 
-	//Shiftã‚’æŠ¼ã—ãŸã¨ãã®ã‚­ãƒ¼ãƒãƒƒãƒ—
+	//Shift‚ª‰Ÿ‚³‚ê‚Ä‚¢‚é‚Æ‚«
 	const char keycode_map_shifted[256] = {
 	  0,    0,    0,    0,    'A',  'B',  'C',  'D', // 0
 	  'E',  'F',  'G',  'H',  'I',  'J',  'K',  'L', // 8
@@ -53,10 +53,11 @@ namespace {
 void InitializeKeyboard() {
 	usb::HIDKeyboardDriver::default_observer =
 		[](uint8_t modifier, uint8_t keycode, bool press) {
-		char ascii = keycode_map[keycode];
-		//ShiftãŒæŠ¼ã•ã‚Œã¦ã„ã‚‹ã‹
 		const bool shift = (modifier & (kLShiftBitMask | kRShiftBitMask)) != 0;
-		if (shift) { ascii = keycode_map_shifted[keycode]; }
+		char ascii = keycode_map[keycode];
+		if (shift) {
+			ascii = keycode_map_shifted[keycode];
+		}
 		Message msg{ Message::kKeyPush };
 		msg.arg.keyboard.modifier = modifier;
 		msg.arg.keyboard.keycode = keycode;

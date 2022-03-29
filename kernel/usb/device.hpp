@@ -1,14 +1,15 @@
-//USBデバイスを表すクラスと関連機能
+//USBデバイス
 #pragma once
 #include <array>
+#include <vector>
 #include "error.hpp"
-#include "usb/setupdata.hpp"
-#include "usb/endpoint.hpp"
 #include "usb/arraymap.hpp"
+#include "usb/classdriver/base.hpp"
+#include "usb/descriptor.hpp"
+#include "usb/endpoint.hpp"
+#include "usb/setupdata.hpp"
 
 namespace usb {
-	class ClassDriver;
-
 	class Device {
 	public:
 		virtual ~Device();
@@ -16,31 +17,28 @@ namespace usb {
 			void* buf, int len, ClassDriver* issuer);
 		virtual Error ControlOut(EndpointID ep_id, SetupData setup_data,
 			const void* buf, int len, ClassDriver* issuer);
-		virtual Error InterruptIn(EndpointID ep_id, void* buf, int len);
-		virtual Error InterruptOut(EndpointID ep_id, void* buf, int len);
+		virtual Error NormalIn(EndpointID ep_id, void* buf, int len);
+		virtual Error NormalOut(EndpointID ep_id, const void* buf, int len);
 
 		Error StartInitialize();
 		bool IsInitialized() { return is_initialized_; }
-		EndpointConfig* EndpointConfigs() { return ep_configs_.data(); }
-		int NumEndpointConfigs() { return num_ep_configs_; }
+		auto& EndpointConfigs() const { return ep_configs_; }
 		Error OnEndpointsConfigured();
 
 		uint8_t* Buffer() { return buf_.data(); }
+		const DeviceDescriptor& DeviceDesc() const { return device_desc_; }
 
 	protected:
 		Error OnControlCompleted(EndpointID ep_id, SetupData setup_data,
 			const void* buf, int len);
-		Error OnInterruptCompleted(EndpointID ep_id, const void* buf, int len);
+		Error OnNormalCompleted(EndpointID ep_id, const void* buf, int len);
 
 	private:
-		//エンドポイントに割り当て済みのクラスドライバ
-		//添字はエンドポイント番号(0 - 15)．
-		//添字0はどのクラスドライバからも使われないため，常に未使用．
-		std::array<ClassDriver*, 16> class_drivers_{};
+		std::vector<ClassDriver*> class_drivers_{};
 
 		std::array<uint8_t, 256> buf_{};
+		DeviceDescriptor device_desc_;
 
-		// following fields are used during initialization
 		uint8_t num_configurations_;
 		uint8_t config_index_;
 
@@ -50,15 +48,12 @@ namespace usb {
 
 		bool is_initialized_ = false;
 		int initialize_phase_ = 0;
-		std::array<EndpointConfig, 16> ep_configs_;
-		int num_ep_configs_;
+		std::vector<EndpointConfig> ep_configs_{};
 		Error InitializePhase1(const uint8_t* buf, int len);
 		Error InitializePhase2(const uint8_t* buf, int len);
 		Error InitializePhase3(uint8_t config_value);
 		Error InitializePhase4();
 
-		/** OnControlCompleted の中で要求の発行元を特定するためのマップ構造．
-		ControlOut または ControlIn を発行したときに発行元が登録される*/
 		ArrayMap<SetupData, ClassDriver*, 4> event_waiters_{};
 	};
 

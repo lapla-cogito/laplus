@@ -75,8 +75,9 @@ namespace usb::cdc {
 
 	template <class T>
 	T* FuncDescDynamicCast(uint8_t* desc_data) {
-		if (FuncDescDynamicCast<const T>(desc_data)) { return reinterpret_cast<T*>(desc_data); }
-
+		if (FuncDescDynamicCast<const T>(desc_data)) {
+			return reinterpret_cast<T*>(desc_data);
+		}
 		return nullptr;
 	}
 

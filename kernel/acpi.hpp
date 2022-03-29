@@ -1,3 +1,4 @@
+//ACPIテーブル定義や操作用プログラムを集めたファイル 
 #pragma once
 #include <cstdint>
 #include <cstddef>

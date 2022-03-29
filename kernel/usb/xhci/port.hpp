@@ -1,4 +1,3 @@
-//xHCIの各ポートを表すクラスと周辺機能
 #pragma once
 #include <cstdint>
 #include "error.hpp"
@@ -32,8 +31,12 @@ namespace usb::xhci {
 		Error Reset();
 		Device* Initialize();
 
-		void ClearConnectStatusChanged() const { CLEAR_STATUS_BIT(connect_status_change); }
-		void ClearPortResetChange() const { CLEAR_STATUS_BIT(port_reset_change); }
+		void ClearConnectStatusChanged() const {
+			CLEAR_STATUS_BIT(connect_status_change);
+		}
+		void ClearPortResetChange() const {
+			CLEAR_STATUS_BIT(port_reset_change);
+		}
 
 	private:
 		const uint8_t port_num_;

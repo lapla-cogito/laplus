@@ -7,15 +7,25 @@ namespace usb::xhci {
 		return port_num_;
 	}
 
-	bool Port::IsConnected() const { return port_reg_set_.PORTSC.Read().bits.current_connect_status; }
+	bool Port::IsConnected() const {
+		return port_reg_set_.PORTSC.Read().bits.current_connect_status;
+	}
 
-	bool Port::IsEnabled() const { return port_reg_set_.PORTSC.Read().bits.port_enabled_disabled; }
+	bool Port::IsEnabled() const {
+		return port_reg_set_.PORTSC.Read().bits.port_enabled_disabled;
+	}
 
-	bool Port::IsConnectStatusChanged() const { return port_reg_set_.PORTSC.Read().bits.connect_status_change; }
+	bool Port::IsConnectStatusChanged() const {
+		return port_reg_set_.PORTSC.Read().bits.connect_status_change;
+	}
 
-	bool Port::IsPortResetChanged() const { return port_reg_set_.PORTSC.Read().bits.port_reset_change; }
+	bool Port::IsPortResetChanged() const {
+		return port_reg_set_.PORTSC.Read().bits.port_reset_change;
+	}
 
-	int Port::Speed() const { return port_reg_set_.PORTSC.Read().bits.port_speed; }
+	int Port::Speed() const {
+		return port_reg_set_.PORTSC.Read().bits.port_speed;
+	}
 
 	Error Port::Reset() {
 		auto portsc = port_reg_set_.PORTSC.Read();
@@ -26,7 +36,5 @@ namespace usb::xhci {
 		return MAKE_ERROR(Error::kSuccess);
 	}
 
-	Device* Port::Initialize() {
-		return nullptr;
-	}
+	Device* Port::Initialize() { return nullptr; }
 }

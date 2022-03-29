@@ -55,9 +55,7 @@ namespace usb::xhci {
 		DoorbellRegister* const dbreg_;
 
 		enum State state_;
-		std::array<Ring*, 31> transfer_rings_; // index = dci - 1
-
-		//コントロール転送が完了した際にDataStageTRBやStatusStageTRBから対応するSetupStageTRBを検索するためのマップ
+		std::array<Ring*, 31> transfer_rings_;
 		ArrayMap<const void*, const SetupStageTRB*, 16> setup_stage_map_{};
 
 		Error PushOneTransaction(EndpointID ep_id, const void* buf, int len);

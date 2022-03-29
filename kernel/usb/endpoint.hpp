@@ -1,4 +1,4 @@
-//エンドポイント設定に関する機能
+//エンドポイント設定周り
 #pragma once
 #include "error.hpp"
 
@@ -15,11 +15,6 @@ namespace usb {
 		constexpr EndpointID() : addr_{ 0 } {}
 		constexpr EndpointID(const EndpointID& ep_id) : addr_{ ep_id.addr_ } {}
 		explicit constexpr EndpointID(int addr) : addr_{ addr } {}
-
-		/** エンドポイント番号と入出力方向からIDを構成する．
-		 * ep_numは0-15の整数
-		 * dir_inはControlエンドポイントでは常にtrueにしなければならない．
-		 */
 		constexpr EndpointID(int ep_num, bool dir_in) : addr_{ ep_num << 1 | dir_in } {}
 
 		EndpointID& operator =(const EndpointID& rhs) {
@@ -29,11 +24,9 @@ namespace usb {
 
 		//エンドポイントアドレス(0-31)
 		int Address() const { return addr_; }
-
 		//エンドポイント番号(0-15)
 		int Number() const { return addr_ >> 1; }
-
-		//入出力方向．Controlエンドポイントはtrue
+		//入出力方向.Controlエンドポイントはtrue
 		bool IsIn() const { return addr_ & 1; }
 
 	private:
@@ -43,16 +36,13 @@ namespace usb {
 	constexpr EndpointID kDefaultControlPipeID{ 0, true };
 
 	struct EndpointConfig {
-		//エンドポイントID
 		EndpointID ep_id;
-
-		//エンドポイントの種別
 		EndpointType ep_type;
-
-		//エンドポイントの最大パケットサイズ(bytes)
 		int max_packet_size;
-
-		//このエンドポイントの制御周期(125*2^(interval-1) [micro sec.])
 		int interval;
 	};
+
+	inline bool operator==(EndpointID lhs, EndpointID rhs) {
+		return lhs.Address() == rhs.Address();
+	}
 }

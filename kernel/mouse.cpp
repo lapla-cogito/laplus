@@ -39,7 +39,6 @@ namespace {
 		if (!act) {
 			return { nullptr, 0 };
 		}
-
 		const auto layer = layer_manager->FindLayer(act);
 		if (!layer) {
 			return { nullptr, 0 };

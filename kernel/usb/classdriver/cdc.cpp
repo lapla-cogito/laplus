@@ -1,19 +1,18 @@
 #include "usb/classdriver/cdc.hpp"
-
 #include <algorithm>
 #include <cstdlib>
 #include <iterator>
-
 #include "logger.hpp"
 #include "usb/device.hpp"
 
 namespace usb::cdc {
 	CDCDriver::CDCDriver(Device* dev, const InterfaceDescriptor* if_comm,
 		const InterfaceDescriptor* if_data) : ClassDriver{ dev } {
-
 	}
 
-	Error CDCDriver::Initialize() { return MAKE_ERROR(Error::kNotImplemented); }
+	Error CDCDriver::Initialize() {
+		return MAKE_ERROR(Error::kNotImplemented);
+	}
 
 	Error CDCDriver::SetEndpoint(const std::vector<EndpointConfig>& configs) {
 		for (const auto& config : configs) {
@@ -46,7 +45,6 @@ namespace usb::cdc {
 			std::copy_n(buf8, len, std::back_inserter(receive_buf_));
 		}
 		else if (ep_id == ep_bulk_out_) {
-			//pass
 		}
 		else {
 			return MAKE_ERROR(Error::kEndpointNotInCharge);

@@ -1,4 +1,3 @@
-//USB Descriptorの定義集
 #pragma once
 #include <cstdint>
 #include <array>
@@ -86,22 +85,14 @@ namespace usb {
 		uint8_t num_descriptors;    // offset 5
 
 		struct ClassDescriptor {
-			//クラス特有ディスクリプタのタイプ値
 			uint8_t descriptor_type;
-			//クラス特有ディスクリプタのバイト数
 			uint16_t descriptor_length;
 		} __attribute__((packed));
 
-		//HID 特有のディスクリプタに関する情報を得る
-		//HID はクラス特有（class-specific）のディスクリプタを 1 つ以上持つ
-		//その数は num_descriptors に記載されている
-		//Reportディスクリプタ(type = 34)は HID デバイスであれば必ず存在するため
-		//num_descriptors は必ず1以上となる
-
-		//index:=取得するディスクリプタの番号で0 <= index < num_descriptors.
-		//返り値はindexで指定されたディスクリプタの情報．index がout of rangeなら nullptr
 		ClassDescriptor* GetClassDescriptor(size_t index) const {
-			if (index >= num_descriptors) { return nullptr; }
+			if (index >= num_descriptors) {
+				return nullptr;
+			}
 			const auto end_of_struct =
 				reinterpret_cast<uintptr_t>(this) + sizeof(HIDDescriptor);
 			return reinterpret_cast<ClassDescriptor*>(end_of_struct) + index;
@@ -110,13 +101,17 @@ namespace usb {
 
 	template <class T>
 	T* DescriptorDynamicCast(uint8_t* desc_data) {
-		if (desc_data[1] == T::kType) { return reinterpret_cast<T*>(desc_data); }
+		if (desc_data[1] == T::kType) {
+			return reinterpret_cast<T*>(desc_data);
+		}
 		return nullptr;
 	}
 
 	template <class T>
 	const T* DescriptorDynamicCast(const uint8_t* desc_data) {
-		if (desc_data[1] == T::kType) { return reinterpret_cast<const T*>(desc_data); }
+		if (desc_data[1] == T::kType) {
+			return reinterpret_cast<const T*>(desc_data);
+		}
 		return nullptr;
 	}
 }

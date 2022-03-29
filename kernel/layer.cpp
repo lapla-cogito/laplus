@@ -5,7 +5,6 @@
 #include "task.hpp"
 
 namespace {
-
 	template <class T, class U>
 	void EraseIf(T& c, const U& pred) {
 		auto it = std::remove_if(c.begin(), c.end(), pred);
@@ -16,23 +15,31 @@ namespace {
 Layer::Layer(unsigned int id) : id_{ id } {
 }
 
-unsigned int Layer::ID() const { return id_; }
+unsigned int Layer::ID() const {
+	return id_;
+}
 
 Layer& Layer::SetWindow(const std::shared_ptr<Window>& window) {
 	window_ = window;
 	return *this;
 }
 
-std::shared_ptr<Window> Layer::GetWindow() const { return window_; }
+std::shared_ptr<Window> Layer::GetWindow() const {
+	return window_;
+}
 
-Vector2D<int> Layer::GetPosition() const { return pos_; }
+Vector2D<int> Layer::GetPosition() const {
+	return pos_;
+}
 
 Layer& Layer::SetDraggable(bool draggable) {
 	draggable_ = draggable;
 	return *this;
 }
 
-bool Layer::IsDraggable() const { return draggable_; }
+bool Layer::IsDraggable() const {
+	return draggable_;
+}
 
 Layer& Layer::Move(Vector2D<int> pos) {
 	pos_ = pos;
@@ -140,8 +147,9 @@ void LayerManager::UpDown(unsigned int id, int new_height) {
 		return;
 	}
 
-	if (new_pos == layer_stack_.end()) { --new_pos; }
-
+	if (new_pos == layer_stack_.end()) {
+		--new_pos;
+	}
 	layer_stack_.erase(old_pos);
 	layer_stack_.insert(new_pos, layer);
 }
@@ -149,7 +157,9 @@ void LayerManager::UpDown(unsigned int id, int new_height) {
 void LayerManager::Hide(unsigned int id) {
 	auto layer = FindLayer(id);
 	auto pos = std::find(layer_stack_.begin(), layer_stack_.end(), layer);
-	if (pos != layer_stack_.end()) { layer_stack_.erase(pos); }
+	if (pos != layer_stack_.end()) {
+		layer_stack_.erase(pos);
+	}
 }
 
 Layer* LayerManager::FindLayerByPosition(Vector2D<int> pos, unsigned int exclude_id) const {
@@ -178,14 +188,17 @@ Layer* LayerManager::FindLayer(unsigned int id) {
 		return elem->ID() == id;
 	};
 	auto it = std::find_if(layers_.begin(), layers_.end(), pred);
-	if (it == layers_.end()) { return nullptr; }
-
+	if (it == layers_.end()) {
+		return nullptr;
+	}
 	return it->get();
 }
 
 int LayerManager::GetHeight(unsigned int id) {
 	for (int h = 0; h < layer_stack_.size(); ++h) {
-		if (layer_stack_[h]->ID() == id) { return h; }
+		if (layer_stack_[h]->ID() == id) {
+			return h;
+		}
 	}
 	return -1;
 }
@@ -195,7 +208,9 @@ namespace {
 
 	Error SendWindowActiveMessage(unsigned int layer_id, int activate) {
 		auto task_it = layer_task_map->find(layer_id);
-		if (task_it == layer_task_map->end()) { return MAKE_ERROR(Error::kNoSuchTask); }
+		if (task_it == layer_task_map->end()) {
+			return MAKE_ERROR(Error::kNoSuchTask);
+		}
 
 		Message msg{ Message::kWindowActive };
 		msg.arg.window_active.activate = activate;
@@ -208,7 +223,9 @@ LayerManager* layer_manager;
 ActiveLayer::ActiveLayer(LayerManager& manager) : manager_{ manager } {
 }
 
-void ActiveLayer::SetMouseLayer(unsigned int mouse_layer) { mouse_layer_ = mouse_layer; }
+void ActiveLayer::SetMouseLayer(unsigned int mouse_layer) {
+	mouse_layer_ = mouse_layer;
+}
 
 void ActiveLayer::Activate(unsigned int layer_id) {
 	if (active_layer_ == layer_id) {
@@ -294,7 +311,9 @@ void ProcessLayerMessage(const Message& msg) {
 
 Error CloseLayer(unsigned int layer_id) {
 	Layer* layer = layer_manager->FindLayer(layer_id);
-	if (layer == nullptr) { return MAKE_ERROR(Error::kNoSuchEntry); }
+	if (layer == nullptr) {
+		return MAKE_ERROR(Error::kNoSuchEntry);
+	}
 
 	const auto pos = layer->GetPosition();
 	const auto size = layer->GetWindow()->Size();

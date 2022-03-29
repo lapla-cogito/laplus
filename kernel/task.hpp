@@ -1,4 +1,3 @@
-//タスク管理,コンテキスト切り替え
 #pragma once
 #include <array>
 #include <cstddef>

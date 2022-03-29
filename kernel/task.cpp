@@ -34,7 +34,7 @@ Task& Task::InitContext(TaskFunc* f, int64_t data) {
 	context_.rdi = id_;
 	context_.rsi = data;
 
-	//MXCSR のすべての例外をマスクする
+	// MXCSR のすべての例外をマスク
 	*reinterpret_cast<uint32_t*>(&context_.fxsave_area[24]) = 0x1f80;
 
 	return *this;
@@ -249,7 +249,7 @@ void TaskManager::ChangeLevelRunning(Task* task, int level) {
 	}
 
 	if (task != running_[current_level_].front()) {
-		//他タスクのレベルを変更
+		// change level of other task
 		Erase(running_[task->Level()], task);
 		running_[level].push_back(task);
 		task->SetLevel(level);
@@ -259,7 +259,7 @@ void TaskManager::ChangeLevelRunning(Task* task, int level) {
 		return;
 	}
 
-	//自身のレベルを変更
+	// change level myself
 	running_[current_level_].pop_front();
 	running_[level].push_front(task);
 	task->SetLevel(level);

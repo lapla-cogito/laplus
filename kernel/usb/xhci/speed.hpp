@@ -1,4 +1,3 @@
-//Protocol Speed IDのデフォルト定義.PSIC==0のときのみ有効
 #pragma once
 
 namespace usb::xhci {

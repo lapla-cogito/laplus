@@ -1,4 +1,3 @@
-//ターミナルウィンドウ
 #pragma once
 #include <array>
 #include <deque>

@@ -1,13 +1,11 @@
-//ページング用プログラム
+//メモリページング
 #pragma once
 #include <cstddef>
 #include <cstdint>
 #include "error.hpp"
 
-//静的に確保するページディレクトリの個数.これはSetupIdentityPageMapで使用.1つのページディレクトリには512個の2MBページを設定できるため,kPageDirectoryCount*1GBの仮想アドレスがマッピングされる
 const size_t kPageDirectoryCount = 64;
 
-//仮想アドレス=物理アドレスとなるようにページテーブルを設定する.最終的にCR3レジスタが正しく設定されたページテーブルを指すようになる.
 void SetupIdentityPageTable();
 
 void InitializePaging();

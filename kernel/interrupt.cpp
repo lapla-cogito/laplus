@@ -1,3 +1,4 @@
+//割り込み用プログラム
 #include "interrupt.hpp"
 #include <csignal>
 #include "asmfunc.h"
@@ -7,12 +8,8 @@
 #include "graphics.hpp"
 #include "font.hpp"
 
-//IDT(割り込み記述子テーブル)の定義.割り込み記述子を256個並べていて任意の割り込みベクタを扱えるようになっている(x86-64では0-255なので).
-//IDTは割り込み要因番号と割り込みハンドラを対応付ける表
 std::array<InterruptDescriptor, 256> idt;
 
-
-//割り込み記述子(16bit構造体)に値を設定
 void SetIDTEntry(InterruptDescriptor& desc,
 	InterruptDescriptorAttribute attr,
 	uint64_t offset,
@@ -115,7 +112,6 @@ namespace {
 		FaultHandlerWithError(NP)
 		FaultHandlerWithError(SS)
 		FaultHandlerWithError(GP)
-		// FaultHandlerWithError(PF)
 		FaultHandlerNoError(MF)
 		FaultHandlerWithError(AC)
 		FaultHandlerNoError(MC)
