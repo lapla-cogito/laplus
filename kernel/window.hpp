@@ -20,12 +20,10 @@ public:
 	public:
 		WindowWriter(Window& window) : window_{ window } {}
 		//指定された位置に指定された色のピクセルを描く
-		virtual void Write(Vector2D<int> pos, const PixelColor& c) override {
-			window_.Write(pos, c);
-		}
-		//Widthは関連付けられたWindowの横幅をピクセル単位で返す
+		virtual void Write(Vector2D<int> pos, const PixelColor& c) override { window_.Write(pos, c); }
+		//Width()は関連付けられたWindowの横幅をピクセル単位で返す
 		virtual int Width() const override { return window_.Width(); }
-		//Heightは関連付けられたWindowの高さをピクセル単位で返す
+		//Height()は関連付けられたWindowの高さをピクセル単位で返す
 		virtual int Height() const override { return window_.Height(); }
 
 	private:
@@ -83,15 +81,10 @@ public:
 	class InnerAreaWriter : public PixelWriter {
 	public:
 		InnerAreaWriter(ToplevelWindow& window) : window_{ window } {}
-		virtual void Write(Vector2D<int> pos, const PixelColor& c) override {
-			window_.Write(pos + kTopLeftMargin, c);
-		}
-		virtual int Width() const override {
-			return window_.Width() - kTopLeftMargin.x - kBottomRightMargin.x;
-		}
-		virtual int Height() const override {
-			return window_.Height() - kTopLeftMargin.y - kBottomRightMargin.y;
-		}
+
+		virtual void Write(Vector2D<int> pos, const PixelColor& c) override { window_.Write(pos + kTopLeftMargin, c); }
+		virtual int Width() const override { return window_.Width() - kTopLeftMargin.x - kBottomRightMargin.x; }
+		virtual int Height() const override { return window_.Height() - kTopLeftMargin.y - kBottomRightMargin.y; }
 
 	private:
 		ToplevelWindow& window_;

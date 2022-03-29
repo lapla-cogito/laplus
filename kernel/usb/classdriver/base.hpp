@@ -1,5 +1,6 @@
 //USB デバイスクラス用のドライバのベースクラス
 #pragma once
+#include <vector>
 #include "error.hpp"
 #include "usb/endpoint.hpp"
 #include "usb/setupdata.hpp"

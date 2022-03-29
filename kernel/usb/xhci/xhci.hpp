@@ -1,5 +1,5 @@
-//xHCIホストコントローラ制御用クラス
 #pragma once
+#include <memory>
 #include "error.hpp"
 #include "usb/xhci/registers.hpp"
 #include "usb/xhci/context.hpp"
@@ -50,9 +50,10 @@ namespace usb::xhci {
 	Error ConfigurePort(Controller& xhc, Port& port);
 	Error ConfigureEndpoints(Controller& xhc, Device& dev);
 
-	/*イベントリングに登録されたイベントを高々1つ処理する．
-	xhc のプライマリイベントリングの先頭のイベントを処理する.イベントが無ければ即座にError::kSuccessを返す
-	イベントを正常に処理できたら Error::kSuccessを返す
-	*/
+	//イベントリングに登録されたイベントを高々1つ処理する.xhc のプライマリイベントリングの先頭のイベントを処理する.イベントが無ければ即座に Error::kSuccess を返す.イベントを正常に処理できたらError::kSuccessが返る
 	Error ProcessEvent(Controller& xhc);
+
+	extern Controller* controller;
+	void Initialize();
+	void ProcessEvents();
 }

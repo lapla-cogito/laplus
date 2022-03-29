@@ -1,5 +1,6 @@
 #include "usb/xhci/ring.hpp"
 #include "usb/memory.hpp"
+#include <cstring>
 
 namespace usb::xhci {
 	Ring::~Ring() {
@@ -22,7 +23,7 @@ namespace usb::xhci {
 
 	void Ring::CopyToLast(const std::array<uint32_t, 4>& data) {
 		for (int i = 0; i < 3; ++i) {
-			// data[0..2] must be written prior to data[3].
+			//data[0..2] must be written prior to data[3].
 			buf_[write_index_].data[i] = data[i];
 		}
 		buf_[write_index_].data[3]

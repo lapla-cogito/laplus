@@ -1,4 +1,3 @@
-//USBデバイスを表すクラスと関連機能
 #pragma once
 #include <cstddef>
 #include <cstdint>
@@ -32,8 +31,6 @@ namespace usb::xhci {
 
 		DeviceContext* DeviceContext() { return &ctx_; }
 		InputContext* InputContext() { return &input_ctx_; }
-		//usb::Device* USBDevice() { return usb_device_; }
-		//void SetUSBDevice(usb::Device* value) { usb_device_ = value; }
 
 		State State() const { return state_; }
 		uint8_t SlotID() const { return slot_id_; }
@@ -45,8 +42,8 @@ namespace usb::xhci {
 			void* buf, int len, ClassDriver* issuer) override;
 		Error ControlOut(EndpointID ep_id, SetupData setup_data,
 			const void* buf, int len, ClassDriver* issuer) override;
-		Error InterruptIn(EndpointID ep_id, void* buf, int len) override;
-		Error InterruptOut(EndpointID ep_id, void* buf, int len) override;
+		Error NormalIn(EndpointID ep_id, void* buf, int len) override;
+		Error NormalOut(EndpointID ep_id, const void* buf, int len) override;
 
 		Error OnTransferEventReceived(const TransferEventTRB& trb);
 
@@ -58,10 +55,11 @@ namespace usb::xhci {
 		DoorbellRegister* const dbreg_;
 
 		enum State state_;
-		std::array<Ring*, 31> transfer_rings_; //index = dci - 1
+		std::array<Ring*, 31> transfer_rings_; // index = dci - 1
 
-		//コントロール転送が完了した際に DataStageTRB や StatusStageTRBから対応するSetupStageTRBを検索するためのマップ
+		//コントロール転送が完了した際にDataStageTRBやStatusStageTRBから対応するSetupStageTRBを検索するためのマップ
 		ArrayMap<const void*, const SetupStageTRB*, 16> setup_stage_map_{};
-		//usb::Device* usb_device_;
+
+		Error PushOneTransaction(EndpointID ep_id, const void* buf, int len);
 	};
 }
