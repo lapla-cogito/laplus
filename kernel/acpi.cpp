@@ -6,19 +6,22 @@
 
 namespace {
 	template <typename T>
-	uint8_t SumBytes(const T* data, size_t bytes) { return SumBytes(reinterpret_cast<const uint8_t*>(data), bytes); }
+	uint8_t SumBytes(const T* data, size_t bytes) {
+		return SumBytes(reinterpret_cast<const uint8_t*>(data), bytes);
+	}
 
 	template <>
 	uint8_t SumBytes<uint8_t>(const uint8_t* data, size_t bytes) {
 		uint8_t sum = 0;
-		for (size_t i = 0; i < bytes; ++i) { sum += data[i]; }
+		for (size_t i = 0; i < bytes; ++i) {
+			sum += data[i];
+		}
 		return sum;
 	}
 
 }
 
 namespace acpi {
-
 	bool RSDP::IsValid() const {
 		if (strncmp(this->signature, "RSD PTR ", 8) != 0) {
 			Log(kDebug, "Invalid signature: %.8s\n", this->signature);
@@ -56,7 +59,9 @@ namespace acpi {
 		return *reinterpret_cast<const DescriptionHeader*>(entries[i]);
 	}
 
-	size_t XSDT::Count() const { return (this->header.length - sizeof(DescriptionHeader)) / sizeof(uint64_t); }
+	size_t XSDT::Count() const {
+		return (this->header.length - sizeof(DescriptionHeader)) / sizeof(uint64_t);
+	}
 
 	const FADT* fadt;
 
@@ -100,5 +105,4 @@ namespace acpi {
 			exit(1);
 		}
 	}
-
 }
