@@ -12,5 +12,5 @@ private:
 public:
 	static const int kRows = 25, kColumns = 80;
 	Console(PixelWriter& writer, const PixelColor& fg_col, const PixelColor& bg_col);
-	void PutString(conast char* s);
+	void PutString(const char* s);
 };
