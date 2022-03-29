@@ -183,7 +183,7 @@ extern "C" void KernelMainNewStack(
 	InitializeGraphics(frame_buffer_config_ref);
 	InitializeConsole();
 
-	printk("Welcome to MikanOS!\n");
+	printk("Welcome to laplus OS!\n");
 	SetLogLevel(kWarn);
 
 	InitializeSegmentation();
