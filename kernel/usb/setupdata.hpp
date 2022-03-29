@@ -90,4 +90,3 @@ namespace usb {
 			lhs.length == rhs.length;
 	}
 }
-
