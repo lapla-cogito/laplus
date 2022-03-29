@@ -53,11 +53,10 @@ namespace {
 void InitializeKeyboard() {
 	usb::HIDKeyboardDriver::default_observer =
 		[](uint8_t modifier, uint8_t keycode, bool press) {
-		const bool shift = (modifier & (kLShiftBitMask | kRShiftBitMask)) != 0;
 		char ascii = keycode_map[keycode];
-		if (shift) {
-			ascii = keycode_map_shifted[keycode];
-		}
+		//Shiftが押されているか
+		const bool shift = (modifier & (kLShiftBitMask | kRShiftBitMask)) != 0;
+		if (shift) { ascii = keycode_map_shifted[keycode]; }
 		Message msg{ Message::kKeyPush };
 		msg.arg.keyboard.modifier = modifier;
 		msg.arg.keyboard.keycode = keycode;
