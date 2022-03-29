@@ -13,24 +13,7 @@
 #include "frame_buffer_config.hpp"
 #include "memory_map.hpp"
 #include "elf.hpp"
-#include "loader_internal.h"
 
-void Halt(void) { while (1) __asm__("hlt"); }
-
-//n(ms)のdelay
-void Stall(unsigned long n) { gBS->Stall(n); }
-
-//メモリーマップのリスト
-struct MemoryMap {
-	UINTN buffer_size;
-	VOID* buffer;
-	UINTN map_size;
-	UINTN map_key;
-	UINTN descriptor_size;
-	UINT32 descriptor_version;
-};
-
-//メモリーマップの取得
 EFI_STATUS GetMemoryMap(struct MemoryMap* map) {
 	if (map->buffer == NULL) { return EFI_BUFFER_TOO_SMALL; }
 
@@ -82,23 +65,6 @@ const CHAR16* GetMemoryTypeUnicode(EFI_MEMORY_TYPE type) {
 	}
 }
 
-const CHAR16* GetPixelFormatUnicode(EFI_PIXEL_GRAPHICS_FORMAT fmt) {
-	switch (fmt) {
-	case PixelRedGreenBlueReserved8bitPerColor:
-		return L"PixelRedGreenBlueReserved 8bitPerColor";
-	case PixelBlueGreenRedReserved8bitPerColor:
-		return L"PixelBlueGreenRedReservedPerColor";
-	case PixelBitMask:
-		return L"PixelBitMask";
-	case PixelBitOnly:
-		return L"PixelBitOnly";
-	case PixelFormatMax:
-		return L"PixelFormatMax";
-	default:
-		return L"Invalid PixelFormat";
-	}
-}
-
 EFI_STATUS SaveMemoryMap(struct MemoryMap* map, EFI_FILE_PROTOCOL* file) {
 	EFI_STATUS status;
 	CHAR8 buf[256];
@@ -109,7 +75,8 @@ EFI_STATUS SaveMemoryMap(struct MemoryMap* map, EFI_FILE_PROTOCOL* file) {
 	status = file->Write(file, &len, header);
 	if (EFI_ERROR(status)) { return status; }
 
-	Print(L"map->buffer = %08lx, map->map_size = %08lx\n", map->buffer, map->map_size);
+	Print(L"map->buffer = %08lx, map->map_size = %08lx\n",
+		map->buffer, map->map_size);
 
 	EFI_PHYSICAL_ADDRESS iter;
 	int i;
@@ -156,7 +123,6 @@ EFI_STATUS OpenRootDir(EFI_HANDLE image_handle, EFI_FILE_PROTOCOL** root) {
 	return fs->OpenVolume(fs, root);
 }
 
-//GOP: Graphics Output Protocol
 EFI_STATUS OpenGOP(EFI_HANDLE image_handle,
 	EFI_GRAPHICS_OUTPUT_PROTOCOL** gop) {
 	EFI_STATUS status;
@@ -180,10 +146,29 @@ EFI_STATUS OpenGOP(EFI_HANDLE image_handle,
 		EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 	if (EFI_ERROR(status)) { return status; }
 
-	FreePool(gop_handles);
+	gBS->FreePool(gop_handles);
 
 	return EFI_SUCCESS;
 }
+
+const CHAR16* GetPixelFormatUnicode(EFI_GRAPHICS_PIXEL_FORMAT fmt) {
+	switch (fmt) {
+	case PixelRedGreenBlueReserved8BitPerColor:
+		return L"PixelRedGreenBlueReserved8BitPerColor";
+	case PixelBlueGreenRedReserved8BitPerColor:
+		return L"PixelBlueGreenRedReserved8BitPerColor";
+	case PixelBitMask:
+		return L"PixelBitMask";
+	case PixelBltOnly:
+		return L"PixelBltOnly";
+	case PixelFormatMax:
+		return L"PixelFormatMax";
+	default:
+		return L"InvalidPixelFormat";
+	}
+}
+
+void Halt(void) { while (1) __asm__("hlt"); }
 
 void CalcLoadAddressRange(Elf64_Ehdr* ehdr, UINT64* first, UINT64* last) {
 	Elf64_Phdr* phdr = (Elf64_Phdr*)((UINT64)ehdr + ehdr->e_phoff);
@@ -232,27 +217,6 @@ EFI_STATUS ReadFile(EFI_FILE_PROTOCOL* file, VOID** buffer) {
 	return file->Read(file, &file_size, *buffer);
 }
 
-//キー入力待ちをする関数,キー入力があれば返る
-EFI_STATUS WaitForPressAnyKey() {
-	EFI_STATUS status;
-
-	Print(L"Press any key to continue...\n");
-
-	status = gBS->WaitForEvent(1, &(gST->ConIn->WaitForKey), 0);
-	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"WaitForEvent error: %r\n", status);
-		Halt();
-	}
-
-	EFI_INPUT_KEY key;
-	status = gST->ConIn->ReadKeyStroke(gST->ConIn, &key);
-	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"ReadKeyStroke error: %r\n", status);
-		Halt();
-	}
-	return EFI_SUCCESS;
-}
-
 EFI_STATUS OpenBlockIoProtocolForLoadedImage(
 	EFI_HANDLE image_handle, EFI_BLOCK_IO_PROTOCOL** block_io) {
 	EFI_STATUS status;
@@ -273,7 +237,7 @@ EFI_STATUS OpenBlockIoProtocolForLoadedImage(
 		loaded_image->DeviceHandle,
 		&gEfiBlockIoProtocolGuid,
 		(VOID**)block_io,
-		image_handle, //agent handle
+		image_handle, // agent handle
 		NULL,
 		EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
@@ -293,137 +257,52 @@ EFI_STATUS ReadBlocks(
 	status = block_io->ReadBlocks(
 		block_io,
 		media_id,
-		0, //start LBA
+		0, // start LBA
 		read_bytes,
 		*buffer);
 
 	return status;
 }
 
-//情報表示(infoかerrorかで文字色変更)
-EFIAPI EFI_STATUS PrintInfo(UINTN level, const CHAR16* Format, ...) {
-	VA_LIST args;
-	EFI_STATUS status;
-	CHAR16 string[256];
-
-	VA_START(args, Format);
-	status = UnicodeVSPrint(string, sizeof(string), Format, args);
-	VA_END(args);
-
-	switch (level) {
-	case INFO:
-		Print(L"[");
-		gST->ConOut->SetAttribute(gST->ConOut, EFI_LIGHTGREEN);
-		Print(L"INFO");
-		gST->ConOut->SetAttribute(gST->ConOut, EFI_WHITE);
-		Print(L"] ");
-		Print(string);
-		break;
-
-	case ERROR:
-		Print(L"[");
-		gST->ConOut->SetAttribute(gST->ConOut, EFI_LIGHTRED);
-		Print(L"ERROR");
-		gST->ConOut->SetAttribute(gST->ConOut, EFI_WHITE);
-		Print(L"] ");
-		Print(string);
-		break;
-	}
-	return status;
-}
-
-
 EFI_STATUS EFIAPI UefiMain(
 	EFI_HANDLE image_handle,
 	EFI_SYSTEM_TABLE* system_table) {
-
 	EFI_STATUS status;
-	gST->ConOut->ClearScreen(gST->ConOut);
 
-	//GOPの読み込み
-	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
-	status = OpenGOP(image_handle, &gop);
-	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to open GOP:%r\n", status);
-		Halt();
-	}
-	//読み込み終了
-
-	//解像度をSXGAに変更
-	int vga_mode = 0;
-	for (int i = 0; i < gop->Mode->MaxMode; ++i) {
-		UINTN gop_info_size;
-		EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* gop_info;
-		gop->QueryMode(gop, i, &gop_info_size, &gop_info);
-		if (gop_info->HorizontalResolution == RES_HORZ &&
-			gop_info->VerticalResolution == RES_VERT) {
-			vga_mode = i;
-			break;
-		}
-	}
-	//変更終了
-
-	//デバイスによっては解像度をSXGAに変更できない場合があるのでその場合はエラーメッセージを表示する
-	status = gop->SetMode(gop, vga_mode);
-	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to change resolution: %r\n", status);
-		Halt();
-	}
-	//表示終了
-
-	//インチキBootwait画面
-	Print(L"Booting laplus OS.");
-	for (int i = 0; i < 3; ++i) {
-		Stall(500000);
-		Print(L".");
-	}
-	//インチキ終了
-
-	//コンソールクリーン
-	gST->ConOut->ClearScreen(gST->ConOut);
-	gST->ConOut->SetAttribute(gST->ConOut, EFI_WHITE);
-	//クリーン終了
-
-	//ロゴの表示
-	PrintLogo();
+	Print(L"Hello, laplus OS!\n");
 
 	CHAR8 memmap_buf[4096 * 4];
 	struct MemoryMap memmap = { sizeof(memmap_buf), memmap_buf, 0, 0, 0, 0 };
 	status = GetMemoryMap(&memmap);
 	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to get memory map: %r\n", status);
+		Print(L"Failed to get memory map: %r\n", status);
 		Halt();
 	}
 
-	//UEFIイメージのrootディレクトリを開く
 	EFI_FILE_PROTOCOL* root_dir;
 	status = OpenRootDir(image_handle, &root_dir);
 	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to open root directory: %r\n", status);
+		Print(L"Failed to open root directory: %r\n", status);
 		Halt();
 	}
 
-	//解像度情報表示
-	PrintInfo(INFO, L"FrameBuffer Resolution: %u * %u\n", gop->Mode->Info->HorizontalResolution, gop->Mode->Info->VerticalResolution);
-
-	//メモリマップをファイルに追加
 	EFI_FILE_PROTOCOL* memmap_file;
 	status = root_dir->Open(
 		root_dir, &memmap_file, L"\\memmap",
 		EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE, 0);
 	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to open file '\\memmap': %r\n", status);
-		PrintInfo(INFO, L"Ignored.\n");
+		Print(L"Failed to open file '\\memmap': %r\n", status);
+		Print(L"Ignored.\n");
 	}
 	else {
 		status = SaveMemoryMap(&memmap, memmap_file);
 		if (EFI_ERROR(status)) {
-			PrintInfo(ERROR, L"Failed to save memory map: %r\n", status);
+			Print(L"Failed to save memory map: %r\n", status);
 			Halt();
 		}
 		status = memmap_file->Close(memmap_file);
 		if (EFI_ERROR(status)) {
-			PrintInfo(ERROR, L"Failed to close memory map: %r\n", status);
+			Print(L"Failed to close memory map: %r\n", status);
 			Halt();
 		}
 	}
@@ -431,38 +310,36 @@ EFI_STATUS EFIAPI UefiMain(
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
 	status = OpenGOP(image_handle, &gop);
 	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to open GOP: %r\n", status);
+		Print(L"Failed to open GOP: %r\n", status);
 		Halt();
 	}
 
-	PrintInfo(INFO, L"Resolution: %ux%u, Pixel Format: %s, %u pixels/line\n",
+	Print(L"Resolution: %ux%u, Pixel Format: %s, %u pixels/line\n",
 		gop->Mode->Info->HorizontalResolution,
 		gop->Mode->Info->VerticalResolution,
 		GetPixelFormatUnicode(gop->Mode->Info->PixelFormat),
 		gop->Mode->Info->PixelsPerScanLine);
-	PrintInfo(INFO, L"Frame Buffer: 0x%0lx - 0x%0lx, Size: %lu bytes\n",
+	Print(L"Frame Buffer: 0x%0lx - 0x%0lx, Size: %lu bytes\n",
 		gop->Mode->FrameBufferBase,
 		gop->Mode->FrameBufferBase + gop->Mode->FrameBufferSize,
 		gop->Mode->FrameBufferSize);
 
 	UINT8* frame_buffer = (UINT8*)gop->Mode->FrameBufferBase;
-	for (UINTN i = 0; i < gop->Mode->FrameBufferSize; ++i) {
-		frame_buffer[i] = 255;
-	}
+	for (UINTN i = 0; i < gop->Mode->FrameBufferSize; ++i) { frame_buffer[i] = 255; }
 
 	EFI_FILE_PROTOCOL* kernel_file;
 	status = root_dir->Open(
 		root_dir, &kernel_file, L"\\kernel.elf",
 		EFI_FILE_MODE_READ, 0);
 	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to open file '\\kernel.elf': %r\n", status);
+		Print(L"Failed to open file '\\kernel.elf': %r\n", status);
 		Halt();
 	}
 
 	VOID* kernel_buffer;
 	status = ReadFile(kernel_file, &kernel_buffer);
 	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Error: %r\n", status);
+		Print(L"Error: %r\n", status);
 		Halt();
 	}
 
@@ -474,7 +351,7 @@ EFI_STATUS EFIAPI UefiMain(
 	status = gBS->AllocatePages(AllocateAddress, EfiLoaderData,
 		num_pages, &kernel_first_addr);
 	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to allocate pages: %r\n", status);
+		Print(L"Failed to allocate pages: %r\n", status);
 		Halt();
 	}
 
@@ -483,7 +360,7 @@ EFI_STATUS EFIAPI UefiMain(
 
 	status = gBS->FreePool(kernel_buffer);
 	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to free pool: %r\n", status);
+		Print(L"Failed to free pool: %r\n", status);
 		Halt();
 	}
 
@@ -496,7 +373,7 @@ EFI_STATUS EFIAPI UefiMain(
 	if (status == EFI_SUCCESS) {
 		status = ReadFile(volume_file, &volume_image);
 		if (EFI_ERROR(status)) {
-			PrintInfo(ERROR, L"Failed to read volume file: %r\n", status);
+			Print(L"Failed to read volume file: %r\n", status);
 			Halt();
 		}
 	}
@@ -504,7 +381,7 @@ EFI_STATUS EFIAPI UefiMain(
 		EFI_BLOCK_IO_PROTOCOL* block_io;
 		status = OpenBlockIoProtocolForLoadedImage(image_handle, &block_io);
 		if (EFI_ERROR(status)) {
-			PrintInfo(ERROR, L"Failed to open Block I/O Protocol: %r\n", status);
+			Print(L"Failed to open Block I/O Protocol: %r\n", status);
 			Halt();
 		}
 
@@ -519,7 +396,7 @@ EFI_STATUS EFIAPI UefiMain(
 
 		status = ReadBlocks(block_io, media->MediaId, volume_bytes, &volume_image);
 		if (EFI_ERROR(status)) {
-			PrintInfo(ERROR, L"Failed to read blocks: %r\n", status);
+			Print(L"Failed to read blocks: %r\n", status);
 			Halt();
 		}
 	}
@@ -543,23 +420,20 @@ EFI_STATUS EFIAPI UefiMain(
 		Halt();
 	}
 
-	//カーネル起動前にUEFI BIOSのブートサービスの停止
 	status = gBS->ExitBootServices(image_handle, memmap.map_key);
 	if (EFI_ERROR(status)) {
 		status = GetMemoryMap(&memmap);
 		if (EFI_ERROR(status)) {
-			PrintInfo(ERROR, L"Failed to get memory map: %r\n", status);
+			Print(L"Failed to get memory map: %r\n", status);
 			Halt();
 		}
 		status = gBS->ExitBootServices(image_handle, memmap.map_key);
 		if (EFI_ERROR(status)) {
-			PrintInfo(ERROR, L"Could not exit boot service: %r\n", status);
+			Print(L"Could not exit boot service: %r\n", status);
 			Halt();
 		}
 	}
-	//停止終了
 
-	//カーネル起動処理
 	UINT64 entry_addr = *(UINT64*)(kernel_first_addr + 24);
 
 	VOID* acpi_table = NULL;
@@ -578,10 +452,9 @@ EFI_STATUS EFIAPI UefiMain(
 		EFI_RUNTIME_SERVICES*);
 	EntryPointType* entry_point = (EntryPointType*)entry_addr;
 	entry_point(&config, &memmap, acpi_table, volume_image, gRT);
-	//カーネル起動処理終了
 
-	PrintInfo(INFO, L"All done!\n");
+	Print(L"All done!\n");
 
-	Halt();
+	while (1);
 	return EFI_SUCCESS;
 }

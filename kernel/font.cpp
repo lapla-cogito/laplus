@@ -102,9 +102,7 @@ std::pair<char32_t, int> ConvertUTF8To32(const char* u8) {
 	}
 }
 
-bool IsHankaku(char32_t c) {
-	return c <= 0x7f;
-}
+bool IsHankaku(char32_t c) { return c <= 0x7f; }
 
 WithError<FT_Face> NewFTFace() {
 	if (!nihongo_buf) {
@@ -167,13 +165,13 @@ Error WriteUnicode(PixelWriter& writer, Vector2D<int> pos,
 
 void InitializeFont() {
 	if (int err = FT_Init_FreeType(&ft_library)) {
-		Log(kError, "failed to initialize FreeType library\n");
+		Log(kError, "Failed to initialize FreeType library\n");
 		exit(1);
 	}
 
 	auto [entry, pos_slash] = fat::FindFile("/nihongo.ttf");
 	if (entry == nullptr || pos_slash) {
-		Log(kWarn, "no nihongo.ttf\n");
+		Log(kWarn, "No nihongo.ttf\n");
 		return;
 	}
 
@@ -181,7 +179,7 @@ void InitializeFont() {
 	nihongo_buf = new std::vector<uint8_t>(size);
 	if (LoadFile(nihongo_buf->data(), size, *entry) != size) {
 		delete nihongo_buf;
-		Log(kError, "failed to load nihongo.ttf");
+		Log(kError, "Failed to load nihongo.ttf");
 		exit(1);
 	}
 }
