@@ -12,6 +12,8 @@
 #include  <Guid/FileInfo.h>
 #include "loader_internal.h"
 
+void Halt(void) { while (1) __asm__("hlt"); }
+
 void Stall() { gBS->Stall(500000); }
 
 EFI_STATUS GetMemoryMap(struct MemoryMap* map) {
@@ -202,8 +204,6 @@ EFI_STATUS WaitForPressAnyKey() {
 	}
 	return EFI_SUCCESS;
 }
-
-void Halt(void) { while (1) __asm__("hlt"); }
 
 void CalcLoadAddressRange(Elf64_Ehdr* ehdr, UINT64* first, UINT64* last) {
 	Elf64_Phdr* phdr = (Elf64_Phdr*)((UINT64)ehdr + ehdr->e_phoff);
