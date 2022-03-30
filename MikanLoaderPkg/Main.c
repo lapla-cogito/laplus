@@ -291,13 +291,27 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE image_handle,
 		}
 	}
 
+	UINT64 entry_addr = *(UINT64*)(kernel_first_addr + 24);
+
+	VOID* acpi_table = NULL;
+	for (UINTN i = 0; i < system_table->NumberOfTableEntries; ++i) {
+		if (CompareGuid(&gEfiAcpiTableGuid,
+			&system_table->ConfigurationTable[i].VendorGuid)) {
+			acpi_table = system_table->ConfigurationTable[i].VendorTable;
+			break;
+		}
+	}
+
 	typedef void EntryPointType(const struct FrameBufferConfig*,
-		const struct MemoryMap*);
+		const struct MemoryMap*,
+		const VOID*,
+		VOID*,
+		EFI_RUNTIME_SERVICES*);
 	EntryPointType* entry_point = (EntryPointType*)entry_addr;
-	entry_point(&config, &memmap);
+	entry_point(&config, &memmap, acpi_table, volume_image, gRT);
 
-	Print(L"All done!\n");
+	Print(L"All done\n");
 
-	Halt();
+	while (1);
 	return EFI_SUCCESS;
 }
