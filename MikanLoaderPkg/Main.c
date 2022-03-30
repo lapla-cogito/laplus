@@ -12,6 +12,9 @@
 #include  <Guid/FileInfo.h>
 #include "loader_internal.h"
 
+#define INFO 0
+#define ERROR 1
+
 void Halt(void) { while (1) __asm__("hlt"); }
 
 void Stall() { gBS->Stall(500000); }
