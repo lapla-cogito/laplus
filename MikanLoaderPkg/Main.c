@@ -344,7 +344,7 @@ EFI_STATUS EFIAPI UefiMain(
 	}
 
 	//‰ð‘œ“x‚ðSXGA‚É
-	int vga_mode = 0;
+	/*int vga_mode = 0;
 	for (int i = 0; i < gop->Mode->MaxMode; ++i) {
 		UINTN gop_info_size;
 		EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* gop_info;
@@ -361,7 +361,7 @@ EFI_STATUS EFIAPI UefiMain(
 	if (EFI_ERROR(status)) {
 		PrintInfo(ERROR, L"Failed to change resolution: %r\n", status);
 		Halt();
-	}
+	}*/
 
 	Print(L"Booting laplus OS.");
 	for (int i = 0; i < 5; ++i) {
