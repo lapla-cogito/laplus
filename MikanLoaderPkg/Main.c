@@ -115,7 +115,7 @@ EFI_STATUS SaveMemoryMap(struct MemoryMap* map, EFI_FILE_PROTOCOL* file) {
 	len = AsciiStrLen(header);
 
 	status = file->Write(file, &len, header);
-	if (EFI_ERROR(status)) {return status;}
+	if (EFI_ERROR(status)) { return status; }
 
 	Print(L"map->buffer = %08lx, map->map_size = %08lx\n",
 		map->buffer, map->map_size);
@@ -333,7 +333,6 @@ EFI_STATUS EFIAPI UefiMain(
 	EFI_SYSTEM_TABLE* system_table) {
 	EFI_STATUS status;
 
-	Print(L"Hello, World!\nThis is laplus OS!");
 
 	CHAR8 memmap_buf[4096 * 4];
 	struct MemoryMap memmap = { sizeof(memmap_buf), memmap_buf, 0, 0, 0, 0 };
@@ -343,8 +342,16 @@ EFI_STATUS EFIAPI UefiMain(
 		Halt();
 	}
 
+	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
+	status = OpenGOP(image_handle, &gop);
+	if (EFI_ERROR(status)) {
+		PrintInfo(ERROR, L"Failed to open GOP: %r\n", status);
+		Halt();
+	}
+
 	//解像度をSXGAに
-	/*int vga_mode = 0;
+	int vga_mode = 0;
+	bool changedresol = 0;
 	for (int i = 0; i < gop->Mode->MaxMode; ++i) {
 		UINTN gop_info_size;
 		EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* gop_info;
@@ -352,8 +359,15 @@ EFI_STATUS EFIAPI UefiMain(
 		if (gop_info->HorizontalResolution == RES_HORZ &&
 			gop_info->VerticalResolution == RES_VERT) {
 			vga_mode = i;
+			changedresol = 1;
 			break;
 		}
+	}
+
+	if (changedresol) {
+		PrintInfo(INFO, L"Changed resolution: %ux%u",
+			gop->Mode->Info->HorizontalResolution,
+			gop->Mode->Info->VerticalResolution);
 	}
 
 	//変更できるかは機種によるのでできない場合はその旨表示
@@ -361,7 +375,9 @@ EFI_STATUS EFIAPI UefiMain(
 	if (EFI_ERROR(status)) {
 		PrintInfo(ERROR, L"Failed to change resolution: %r\n", status);
 		Halt();
-	}*/
+	}
+
+	Print(L"Hello, World!\nThis is laplus OS!\n\n");
 
 	Print(L"Booting laplus OS.");
 	for (int i = 0; i < 5; ++i) {
@@ -396,13 +412,6 @@ EFI_STATUS EFIAPI UefiMain(
 			PrintInfo(ERROR, L"Failed to close memory map: %r\n", status);
 			Halt();
 		}
-	}
-
-	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop;
-	status = OpenGOP(image_handle, &gop);
-	if (EFI_ERROR(status)) {
-		PrintInfo(ERROR, L"Failed to open GOP: %r\n", status);
-		Halt();
 	}
 
 	Print(L"Resolution: %ux%u, Pixel Format: %s, %u pixels/line\n",
