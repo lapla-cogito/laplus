@@ -17,7 +17,7 @@
 
 void Halt(void) { while (1) __asm__("hlt"); }
 
-void Stall() { gBS->Stall(1000000); }
+void Stall(UINT64 n) { gBS->Stall(n); }
 
 EFI_STATUS GetMemoryMap(struct MemoryMap* map) {
 	if (map->buffer == NULL) {
@@ -111,10 +111,9 @@ EFI_STATUS SaveMemoryMap(struct MemoryMap* map, EFI_FILE_PROTOCOL* file) {
 	CHAR8* header =
 		"Index, Type, Type(name), PhysicalStart, NumberOfPages, Attribute\n";
 	len = AsciiStrLen(header);
+
 	status = file->Write(file, &len, header);
-	if (EFI_ERROR(status)) {
-		return status;
-	}
+	if (EFI_ERROR(status)) {return status;}
 
 	Print(L"map->buffer = %08lx, map->map_size = %08lx\n",
 		map->buffer, map->map_size);
@@ -332,7 +331,7 @@ EFI_STATUS EFIAPI UefiMain(
 	EFI_SYSTEM_TABLE* system_table) {
 	EFI_STATUS status;
 
-	Print(L"Hello,  laplus!\n");
+	Print(L"Hello, World!\nThis is laplus OS!");
 
 	CHAR8 memmap_buf[4096 * 4];
 	struct MemoryMap memmap = { sizeof(memmap_buf), memmap_buf, 0, 0, 0, 0 };
@@ -342,11 +341,32 @@ EFI_STATUS EFIAPI UefiMain(
 		Halt();
 	}
 
+	//解像度をSXGAに
+	int vga_mode = 0;
+	for (int i = 0; i < gop->Mode->MaxMode; ++i) {
+		UINTN gop_info_size;
+		EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* gop_info;
+		gop->QueryMode(gop, i, &gop_info_size, &gop_info);
+		if (gop_info->HorizontalResolution == RES_HORZ &&
+			gop_info->VerticalResolution == RES_VERT) {
+			vga_mode = i;
+			break;
+		}
+	}
+
+	//変更できるかは機種によるのでできない場合はその旨表示
+	status = gop->SetMode(gop, vga_mode);
+	if (EFI_ERROR(status)) {
+		PrintInfo(ERROR, L"Failed to change resolution: %r\n", status);
+		Halt();
+	}
+
 	Print(L"Booting laplus OS.");
 	for (int i = 0; i < 5; ++i) {
-		Stall();
+		Stall(1000000);
 		Print(L".");
 	}
+	Print(L"\n");
 
 	EFI_FILE_PROTOCOL* root_dir;
 	status = OpenRootDir(image_handle, &root_dir);
@@ -392,6 +412,7 @@ EFI_STATUS EFIAPI UefiMain(
 		gop->Mode->FrameBufferBase,
 		gop->Mode->FrameBufferBase + gop->Mode->FrameBufferSize,
 		gop->Mode->FrameBufferSize);
+	Stall(3000000);
 
 	UINT8* frame_buffer = (UINT8*)gop->Mode->FrameBufferBase;
 	for (UINTN i = 0; i < gop->Mode->FrameBufferSize; ++i) { frame_buffer[i] = 255; }
@@ -529,6 +550,7 @@ EFI_STATUS EFIAPI UefiMain(
 	entry_point(&config, &memmap, acpi_table, volume_image, gRT);
 
 	Print(L"All done!\n");
+	Stall(1000000);
 
 	while (1);
 	return EFI_SUCCESS;
