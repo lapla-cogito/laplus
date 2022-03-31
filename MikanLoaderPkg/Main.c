@@ -17,7 +17,7 @@
 
 void Halt(void) { while (1) __asm__("hlt"); }
 
-void Stall(UINT64 n) { gBS->Stall(n); }
+void Stall(UINTN n) { gBS->Stall(n); }
 
 EFI_STATUS GetMemoryMap(struct MemoryMap* map) {
 	if (map->buffer == NULL) {
