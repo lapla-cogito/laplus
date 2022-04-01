@@ -1,5 +1,5 @@
 //cowsayコマンド
-#include <cstudio>
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 
