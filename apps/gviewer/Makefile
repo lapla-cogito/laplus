@@ -1,3 +1,3 @@
-TARGET = gview
-OBJS = gview.o
+TARGET = gviewer
+OBJS = gviewer.o
 include ../Makefile.elfapp

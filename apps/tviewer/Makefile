@@ -1,3 +1,3 @@
-TARGET = tview
-OBJS = tview.o
+TARGET = tviewer
+OBJS = tviewer.o
 include ../Makefile.elfapp
