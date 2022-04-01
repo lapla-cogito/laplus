@@ -12,7 +12,7 @@ using namespace std;
 char ushi[] = "        \\   ^__^\n         \\  (oo)\\\n            (__)\\       )\\/\\\n                ||----w |\n                ||     ||\n";
 
 extern "C" void main(int argc, char** argv) {
-	if (argc < 1) {
+	if (argc < 2) {
 		fprintf(stderr, "Usage: %s <string>\n", argv[0]);
 		exit(1);
 	}

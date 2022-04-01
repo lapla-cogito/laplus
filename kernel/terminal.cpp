@@ -44,26 +44,22 @@ namespace {
 
 		char* p = first_arg;
 		while (true) {
-			while (isspace(p[0])) {
-				++p;
-			}
-			if (p[0] == 0) {
-				break;
-			}
+			while (isspace(p[0])) { ++p; }
+
+			if (p[0] == 0) { break; }
 			const char* arg = p;
 
-			while (p[0] != 0 && !isspace(p[0])) {
-				++p;
-			}
+			while (p[0] != 0 && !isspace(p[0])) { ++p; }
 			// here: p[0] == 0 || isspace(p[0])
+
 			const bool is_end = p[0] == 0;
 			p[0] = 0;
 			if (auto err = push_to_argv(arg)) {
 				return { argc, err };
 			}
-			if (is_end) {
-				break;
-			}
+
+			if (is_end) { break; }
+
 			++p;
 		}
 
@@ -78,7 +74,7 @@ namespace {
 	uintptr_t GetFirstLoadAddress(Elf64_Ehdr* ehdr) {
 		auto phdr = GetProgramHeader(ehdr);
 		for (int i = 0; i < ehdr->e_phnum; ++i) {
-			if (phdr[i].p_type != PT_LOAD) continue;
+			if (phdr[i].p_type != PT_LOAD) { continue; }
 			return phdr[i].p_vaddr;
 		}
 		return 0;
@@ -90,7 +86,7 @@ namespace {
 		auto phdr = GetProgramHeader(ehdr);
 		uint64_t last_addr = 0;
 		for (int i = 0; i < ehdr->e_phnum; ++i) {
-			if (phdr[i].p_type != PT_LOAD) continue;
+			if (phdr[i].p_type != PT_LOAD) { continue; }
 
 			LinearAddress4Level dest_addr;
 			dest_addr.value = phdr[i].p_vaddr;
@@ -126,9 +122,7 @@ namespace {
 
 	WithError<PageMapEntry*> SetupPML4(Task& current_task) {
 		auto pml4 = NewPageMap();
-		if (pml4.error) {
-			return pml4;
-		}
+		if (pml4.error) { return pml4; }
 
 		const auto current_pml4 = reinterpret_cast<PageMapEntry*>(GetCR3());
 		memcpy(pml4.value, current_pml4, 256 * sizeof(uint64_t));
