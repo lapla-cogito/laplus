@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <string.h>
 #include "../syscall.h"
 
 using namespace std;
@@ -29,9 +30,9 @@ extern "C" void main(int argc, char** argv) {
 
 	//from here, output cowsay
 	printf(" ");
-	for (int i = 0; i < str.length() + 2; ++i) { printf("_"); }
+	for (int i = 0; i < strlen(str) + 2; ++i) { printf("_"); }
 	printf(" \n< %s >\n ", str);
 
-	for (int i = 0; i < str.length() + 2; ++i) { printf("-"); }
+	for (int i = 0; i < strlen(str) + 2; ++i) { printf("-"); }
 	printf(" \n%s", ushi);
 }

@@ -223,7 +223,7 @@ const CHAR16* GetPixelFormatUnicode(EFI_GRAPHICS_PIXEL_FORMAT fmt) {
 EFI_STATUS WaitForPressAnyKey() {
 	EFI_STATUS status;
 
-	Print(L"Press any key to continue:\n");
+	Print(L"Press any key to continue...\n");
 
 	status = gBS->WaitForEvent(1, &(gST->ConIn->WaitForKey), 0);
 	if (EFI_ERROR(status)) {
@@ -376,14 +376,14 @@ EFI_STATUS EFIAPI UefiMain(
 		Halt();
 	}
 
-	Print(L"Hello, World!\nThis is laplus OS!\n\n");
+	Print(L"\nHello, World!\n This is laplus OS!\n\n");
 
 	Print(L"Booting laplus OS.");
 	for (int i = 0; i < 5; ++i) {
 		Stall(1000000);
 		Print(L".");
 	}
-	Print(L"\n");
+	Print(L"\n\n\n");
 
 	EFI_FILE_PROTOCOL* root_dir;
 	status = OpenRootDir(image_handle, &root_dir);
@@ -425,7 +425,7 @@ EFI_STATUS EFIAPI UefiMain(
 	Stall(3000000);
 
 	UINT8* frame_buffer = (UINT8*)gop->Mode->FrameBufferBase;
-	for (UINTN i = 0; i < gop->Mode->FrameBufferSize; ++i) { frame_buffer[i] = 255; }
+	for (UINTN i = 0; i < gop->Mode->FrameBufferSize; ++i) { frame_buffer[i] = 0; }
 
 	EFI_FILE_PROTOCOL* kernel_file;
 	status = root_dir->Open(
