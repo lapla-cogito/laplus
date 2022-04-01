@@ -1,0 +1,9 @@
+# 多言語てすてす
+
+Japanese: テスト
+
+Russian: тестовое задание
+
+Chinese: 测试
+
+Sinhala: පරීක්ෂණය
