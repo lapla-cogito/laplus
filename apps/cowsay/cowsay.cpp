@@ -30,12 +30,8 @@ extern "C" void main(int argc, char** argv) {
 	//from here, output cowsay
 	printf(" ");
 	for (int i = 0; i < str.length() + 2; ++i) { printf("_"); }
-	printf(" \n");
+	printf(" \n< %s >\n ", str);
 
-	cout << "< " << str << " >" << std::endl;
-
-	printf(" ");
 	for (int i = 0; i < str.length() + 2; ++i) { printf("-"); }
-	printf(" \n");
-	printf("%s", ushi);
+	printf(" \n%s", ushi);
 }
