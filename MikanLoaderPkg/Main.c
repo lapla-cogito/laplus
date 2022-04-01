@@ -350,8 +350,7 @@ EFI_STATUS EFIAPI UefiMain(
 	}
 
 	//‰ð‘œ“x‚ðSXGA‚É
-	int vga_mode = 0;
-	bool changedresol = 0;
+	int vga_mode = 0, changedresol = 0;
 	for (int i = 0; i < gop->Mode->MaxMode; ++i) {
 		UINTN gop_info_size;
 		EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* gop_info;
@@ -364,7 +363,7 @@ EFI_STATUS EFIAPI UefiMain(
 		}
 	}
 
-	if (changedresol) {
+	if (changedresol == 1) {
 		PrintInfo(INFO, L"Changed resolution: %ux%u",
 			gop->Mode->Info->HorizontalResolution,
 			gop->Mode->Info->VerticalResolution);
