@@ -8,7 +8,7 @@
 using namespace std;
 
 //うし
-string ushi = "        \\   ^__^\n         \\  (oo)\\\n            (__)\\       )\\/\\\n                ||----w |\n                ||     ||\n";
+char ushi[] = "        \\   ^__^\n         \\  (oo)\\\n            (__)\\       )\\/\\\n                ||----w |\n                ||     ||\n";
 
 extern "C" void main(int argc, char** argv) {
 	if (argc < 1) {
@@ -16,14 +16,14 @@ extern "C" void main(int argc, char** argv) {
 		exit(1);
 	}
 
-	std::string str = "";
+	char str[] = "";
 
 	//スペースが入っていた時用にconcat処理
-	if (argc == 1) { str = argv[1]; }
+	if (argc == 1) { strcpy(str, argv[1]); }
 	else {
 		for (int i = 1; i < argc; ++i) {
-			str += argv[i];
-			if (i != argc - 1) { str += " "; }
+			strcat(str, argv[i]);
+			if (i != argc - 1) { strcat(str, " "); }
 		}
 	}
 
