@@ -37,9 +37,8 @@ void WaitEvent() {
 			fprintf(stderr, "ReadEvent failed: %s\n", strerror(err));
 			return;
 		}
-		if (events[0].type == AppEvent::kQuit) {
-			return;
-		}
+
+		if (events[0].type == AppEvent::kQuit) { return; }
 	}
 }
 
