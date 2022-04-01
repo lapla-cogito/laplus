@@ -60,9 +60,7 @@ namespace {
 
 	void KillApp(InterruptFrame* frame) {
 		const auto cpl = frame->cs & 0x3;
-		if (cpl != 3) {
-			return;
-		}
+		if (cpl != 3) { return; }
 
 		auto& task = task_manager->CurrentTask();
 		__asm__("sti");
@@ -72,14 +70,13 @@ namespace {
 	__attribute__((interrupt))
 		void IntHandlerPF(InterruptFrame* frame, uint64_t error_code) {
 		uint64_t cr2 = GetCR2();
-		if (auto err = HandlePageFault(error_code, cr2); !err) {
-			return;
-		}
+		if (auto err = HandlePageFault(error_code, cr2); !err) { return; }
+
 		KillApp(frame);
 		PrintFrame(frame, "#PF");
 		WriteString(*screen_writer, { 500, 16 * 4 }, "ERR", { 0, 0, 0 });
 		PrintHex(error_code, 16, { 500 + 8 * 4, 16 * 4 });
-		while (true) __asm__("hlt");
+		while (true) { __asm__("hlt"); }
 	}
 
 #define FaultHandlerWithError(fault_name) \

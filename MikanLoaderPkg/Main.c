@@ -376,7 +376,7 @@ EFI_STATUS EFIAPI UefiMain(
 		Halt();
 	}
 
-	Print(L"\nHello, World!\n This is laplus OS!\n\n");
+	Print(L"\nHello, World!\nThis is laplus OS!\n\n");
 
 	Print(L"Booting laplus OS.");
 	for (int i = 0; i < 5; ++i) {
