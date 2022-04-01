@@ -26,14 +26,14 @@ extern "C" void main(int argc, char** argv) {
 	//from here, output cowsay
 	printf(" ");
 	for (int i = 0; i < str.length() + 2; ++i) { printf("_"); }
-	printf(" "); 
-	puts();
+	printf(" ");
+	std::count << std::endl;
 
-	std::count << "< " << str << " >" << endl;
+	std::cout << "< " << str << " >" << std::endl;
 
 	printf(" ");
 	for (int i = 0; i < str.length() + 2; ++i) { printf("-"); }
-	printf(" "); 
-	puts();
-	cout << ushi;
+	printf(" ");
+	std::cout << std::endl;
+	std::cout << ushi;
 }
