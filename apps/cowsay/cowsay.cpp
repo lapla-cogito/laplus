@@ -1,10 +1,14 @@
 //cowsayコマンド
+
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include "../syscall.h"
+
+using namespace std;
 
 //うし
-std::string ushi = "        \\   ^__^\n         \\  (oo)\\\n            (__)\\       )\\/\\\n                ||----w |\n                ||     ||\n";
+string ushi = "        \\   ^__^\n         \\  (oo)\\\n            (__)\\       )\\/\\\n                ||----w |\n                ||     ||\n";
 
 extern "C" void main(int argc, char** argv) {
 	if (argc < 1) {
@@ -26,14 +30,12 @@ extern "C" void main(int argc, char** argv) {
 	//from here, output cowsay
 	printf(" ");
 	for (int i = 0; i < str.length() + 2; ++i) { printf("_"); }
-	printf(" ");
-	std::count << std::endl;
+	printf(" \n");
 
-	std::cout << "< " << str << " >" << std::endl;
+	cout << "< " << str << " >" << std::endl;
 
 	printf(" ");
 	for (int i = 0; i < str.length() + 2; ++i) { printf("-"); }
-	printf(" ");
-	std::cout << std::endl;
-	std::cout << ushi;
+	printf(" \n");
+	printf("%s", ushi);
 }
