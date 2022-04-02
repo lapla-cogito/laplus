@@ -44,9 +44,7 @@ namespace {
 
 Window::Window(int width, int height, PixelFormat shadow_format) : width_{ width }, height_{ height } {
 	data_.resize(height);
-	for (int y = 0; y < height; ++y) {
-		data_[y].resize(width);
-	}
+	for (int y = 0; y < height; ++y) { data_[y].resize(width); }
 
 	FrameBufferConfig config{};
 	config.frame_buffer = nullptr;
@@ -188,13 +186,17 @@ void DrawTerminal(PixelWriter& writer, Vector2D<int> pos, Vector2D<int> size) {
 
 void DrawWindowTitle(PixelWriter& writer, const char* title, bool active) {
 	const auto win_w = writer.Width();
-	uint32_t bgcolor = 0x848484;
-	if (active) {
-		bgcolor = 0x000084;
-	}
+	uint32_t bgcolor = 0x848484, titlecolor = 0x797979;
+	if (active) { bgcolor = 0x000084, titlecolor = 0xffffff; }
 
-	FillRectangle(writer, { 3, 3 }, { win_w - 6, 18 }, ToColor(bgcolor));
-	WriteString(writer, { 24, 4 }, title, ToColor(0xffffff));
+	FillRectangle(writer,
+		{ 3, 3 },
+		{ win_w - 6, 18 },
+		ToColor(bgcolor));
+	WriteString(writer,
+		{ 24, 4 },
+		title,
+		ToColor(titlecolor));
 
 	for (int y = 0; y < kCloseButtonHeight; ++y) {
 		for (int x = 0; x < kCloseButtonWidth; ++x) {

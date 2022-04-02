@@ -6,6 +6,7 @@
 #include <limits>
 #include <numeric>
 #include <vector>
+#include <algorithm>
 #include "frame_buffer_config.hpp"
 #include "memory_map.hpp"
 #include "graphics.hpp"
@@ -88,9 +89,7 @@ void DrawTextCursor(bool visible) {
 }
 
 void InputTextWindow(char c) {
-	if (c == 0) {
-		return;
-	}
+	if (c == 0) { return; }
 
 	auto pos = []() { return Vector2D<int>{4 + 8 * text_window_index, 6}; };
 
@@ -119,6 +118,7 @@ void TaskWallclock(uint64_t task_id, int64_t data) {
 	Task& task = task_manager->CurrentTask();
 	auto clock_window = std::make_shared<Window>(
 		8 * 10, 16 * 2, screen_config.pixel_format);
+
 	const auto clock_window_layer_id = layer_manager->NewLayer()
 		.SetWindow(clock_window)
 		.SetDraggable(false)

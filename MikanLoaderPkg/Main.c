@@ -22,9 +22,7 @@ void Halt(void) { while (1) __asm__("hlt"); }
 void Stall(UINTN n) { gBS->Stall(n); }
 
 EFI_STATUS GetMemoryMap(struct MemoryMap* map) {
-	if (map->buffer == NULL) {
-		return EFI_BUFFER_TOO_SMALL;
-	}
+	if (map->buffer == NULL) { return EFI_BUFFER_TOO_SMALL; }
 
 	map->map_size = map->buffer_size;
 	return gBS->GetMemoryMap(
@@ -220,6 +218,7 @@ const CHAR16* GetPixelFormatUnicode(EFI_GRAPHICS_PIXEL_FORMAT fmt) {
 	}
 }
 
+//ƒL[‰Ÿ‰º‘Ò‚¿
 EFI_STATUS WaitForPressAnyKey() {
 	EFI_STATUS status;
 
@@ -272,9 +271,7 @@ EFI_STATUS ReadFile(EFI_FILE_PROTOCOL* file, VOID** buffer) {
 	status = file->GetInfo(
 		file, &gEfiFileInfoGuid,
 		&file_info_size, file_info_buffer);
-	if (EFI_ERROR(status)) {
-		return status;
-	}
+	if (EFI_ERROR(status)) { return status; }
 
 	EFI_FILE_INFO* file_info = (EFI_FILE_INFO*)file_info_buffer;
 	UINTN file_size = file_info->FileSize;
@@ -418,11 +415,13 @@ EFI_STATUS EFIAPI UefiMain(
 		gop->Mode->Info->VerticalResolution,
 		GetPixelFormatUnicode(gop->Mode->Info->PixelFormat),
 		gop->Mode->Info->PixelsPerScanLine);
+
 	Print(L"Frame Buffer: 0x%0lx - 0x%0lx, Size: %lu bytes\n",
 		gop->Mode->FrameBufferBase,
 		gop->Mode->FrameBufferBase + gop->Mode->FrameBufferSize,
 		gop->Mode->FrameBufferSize);
-	Stall(3000000);
+
+	Stall(5000000);
 
 	UINT8* frame_buffer = (UINT8*)gop->Mode->FrameBufferBase;
 	for (UINTN i = 0; i < gop->Mode->FrameBufferSize; ++i) { frame_buffer[i] = 0; }
