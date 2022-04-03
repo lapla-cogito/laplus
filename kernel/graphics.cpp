@@ -2,8 +2,7 @@
 #include <cstdio>
 #include <fcntl.h>
 #include "graphics.hpp"
-#include "../apps/syscall.h"
-#include "syscall.hpp"
+#include "syscall.h"
 
 
 #define STBI_NO_THREAD_LOCALS
@@ -53,7 +52,7 @@ void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 }
 
 std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath) {
-	SyscallResult res = syscall::OpenFile(filepath, O_RDONLY);
+	SyscallResult res = SyscallOpenFile(filepath, O_RDONLY);
 	if (res.error) {
 		fprintf(stderr, "%s: %s\n", strerror(res.error), filepath);
 		exit(1);
@@ -61,7 +60,7 @@ std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath) {
 
 	const int fd = res.value;
 	size_t filesize;
-	res = syscall::MapFile(fd, &filesize, 0);
+	res = SyscallMapFile(fd, &filesize, 0);
 	if (res.error) {
 		fprintf(stderr, "%s\n", strerror(res.error));
 		exit(1);
