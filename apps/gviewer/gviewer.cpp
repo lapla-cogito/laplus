@@ -66,15 +66,13 @@ extern "C" void main(int argc, char** argv) {
 	unsigned char* image_data = stbi_load_from_memory(
 		content, filesize, &width, &height, &bytes_per_pixel, 0);
 	if (image_data == nullptr) {
-		fprintf(stderr, "failed to load image: %s\n", stbi_failure_reason());
+		fprintf(stderr, "Failed to load image: %s\n", stbi_failure_reason());
 		exit(1);
 	}
 
 	fprintf(stderr, "%dx%d, %d bytes/pixel\n", width, height, bytes_per_pixel);
 	auto get_color = GetColorRGB;
-	if (bytes_per_pixel <= 2) {
-		get_color = GetColorGray;
-	}
+	if (bytes_per_pixel <= 2) { get_color = GetColorGray; }
 
 	const char* last_slash = strrchr(filepath, '/');
 	const char* filename = last_slash ? &last_slash[1] : filepath;

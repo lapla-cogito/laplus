@@ -234,7 +234,7 @@ namespace {
 		return FindCommand(command, apps_entry.first->FirstCluster());
 	}
 
-} // namespace
+}
 
 std::map<fat::DirectoryEntry*, AppLoadInfo>* app_loads;
 
@@ -389,13 +389,13 @@ void Terminal::ExecuteLine() {
 			auto [new_file, err] = fat::CreateFile(redir_dest);
 			if (err) {
 				PrintToFD(*files_[2],
-					"failed to create a redirect file: %s\n", err.Name());
+					"Failed to create a redirect file: %s\n", err.Name());
 				return;
 			}
 			file = new_file;
 		}
 		else if (file->attr == fat::Attribute::kDirectory || post_slash) {
-			PrintToFD(*files_[2], "cannot redirect to a directory\n");
+			PrintToFD(*files_[2], "Cannot redirect to a directory\n");
 			return;
 		}
 		files_[1] = std::make_shared<fat::FileDescriptor>(*file);
@@ -407,9 +407,7 @@ void Terminal::ExecuteLine() {
 	if (pipe_char) {
 		*pipe_char = 0;
 		char* subcommand = &pipe_char[1];
-		while (isspace(*subcommand)) {
-			++subcommand;
-		}
+		while (isspace(*subcommand)) { ++subcommand; }
 
 		auto& subtask = task_manager->NewTask();
 		pipe_fd = std::make_shared<PipeDescriptor>(subtask);
@@ -933,9 +931,7 @@ size_t PipeDescriptor::Read(void* buf, size_t len) {
 		return copy_bytes;
 	}
 
-	if (closed_) {
-		return 0;
-	}
+	if (closed_) { return 0; }
 
 	while (true) {
 		__asm__("cli");
@@ -946,9 +942,7 @@ size_t PipeDescriptor::Read(void* buf, size_t len) {
 		}
 		__asm__("sti");
 
-		if (msg->type != Message::kPipe) {
-			continue;
-		}
+		if (msg->type != Message::kPipe) { continue; }
 
 		if (msg->arg.pipe.len == 0) {
 			closed_ = true;

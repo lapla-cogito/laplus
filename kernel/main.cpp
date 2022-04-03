@@ -271,7 +271,7 @@ extern "C" void KernelMainNewStack(
 				}
 			}
 			else if (msg->arg.keyboard.press &&
-				msg->arg.keyboard.keycode == 59 /* F2 */) {
+				msg->arg.keyboard.keycode == 59 /* F2 */) {//F2が押されたらターミナル生成
 				task_manager->NewTask()
 					.InitContext(TaskTerminal, 0)
 					.Wakeup();

@@ -122,11 +122,15 @@ public:
 	virtual void Write(Vector2D<int> pos, const PixelColor& c) override;
 };
 
+uint32_t GetColorRGB(unsigned char* image_data);
+
 void DrawRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 	const Vector2D<int>& size, const PixelColor& c);
 
 void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 	const Vector2D<int>& size, const PixelColor& c);
+
+std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath);
 
 const PixelColor kDesktopBGColor{ 45, 118, 237 };
 const PixelColor kDesktopFGColor{ 255, 255, 255 };

@@ -1,5 +1,6 @@
 //画像描画用
 #include "graphics.hpp"
+#include "../apps/gviewer/stb_image.h"
 
 void RGBResv8BitPerColorPixelWriter::Write(Vector2D<int> pos, const PixelColor& c) {
 	auto p = PixelAt(pos);
@@ -13,6 +14,12 @@ void BGRResv8BitPerColorPixelWriter::Write(Vector2D<int> pos, const PixelColor& 
 	p[0] = c.b;
 	p[1] = c.g;
 	p[2] = c.r;
+}
+
+uint32_t GetColorRGB(unsigned char* image_data) {
+	return static_cast<uint32_t>(image_data[0]) << 16 |
+		static_cast<uint32_t>(image_data[1]) << 8 |
+		static_cast<uint32_t>(image_data[2]);
 }
 
 void DrawRectangle(PixelWriter& writer, const Vector2D<int>& pos,
@@ -36,13 +43,67 @@ void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 	}
 }
 
+std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath) {
+	SyscallResult res = SyscallOpenFile(filepath, O_RDONLY);
+	if (res.error) {
+		fprintf(stderr, "%s: %s\n", strerror(res.error), filepath);
+		exit(1);
+	}
+
+	const int fd = res.value;
+	size_t filesize;
+	res = SyscallMapFile(fd, &filesize, 0);
+	if (res.error) {
+		fprintf(stderr, "%s\n", strerror(res.error));
+		exit(1);
+	}
+
+	return { fd, reinterpret_cast<uint8_t*>(res.value), filesize };
+}
+
+//デスクトップ描画
 void DrawDesktop(PixelWriter& writer) {
 	const auto width = writer.Width();
 	const auto height = writer.Height();
-	FillRectangle(writer,
+	/*FillRectangle(writer,
 		{ 0, 0 },
 		{ width, height - 50 },
-		kDesktopBGColor);
+		kDesktopBGColor);*/
+
+		//壁紙描画
+	int width, height, bytes_per_pixel;
+	const char* filepath = "wallpaper.png";
+	const auto [fd, content, filesize] = MapFile(filepath);
+
+	unsigned char* image_data = stbi_load_from_memory(
+		content, filesize, &width, &height, &bytes_per_pixel, 0);
+	//wallpaper.pngを読み込めなかったらデフォのfillrect
+	if (image_data == nullptr) {
+		//fprintf(stderr, "Failed to load image: %s\n", stbi_failure_reason());
+		FillRectangle(writer,
+			{ 0, 0 },
+			{ width, height - 50 },
+			kDesktopBGColor);
+	}
+	else {
+		auto get_color = GetColorRGB;
+		if (bytes_per_pixel <= 2) { get_color = GetColorGray; }
+
+		const char* last_slash = strrchr(filepath, '/');
+		const char* filename = last_slash ? &last_slash[1] : filepath;
+
+		for (int y = 0; y < height; ++y) {
+			for (int x = 0; x < width; ++x) {
+				uint32_t c = get_color(&image_data[bytes_per_pixel * (y * width + x)]);
+				FillRectangle(writer,
+					{ x - 1,y - 1 },
+					{ x,y },
+					ToColor(c));
+			}
+		}
+	}
+	//壁紙描画終了
+
 	FillRectangle(writer,
 		{ 0, height - 50 },
 		{ width, 50 },
