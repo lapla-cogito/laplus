@@ -48,15 +48,14 @@ namespace {
 		if (task_it == layer_task_map->end()) {
 			return { layer, 0 };
 		}
+
 		return { layer, task_it->second };
 	}
 
 	void SendMouseMessage(Vector2D<int> newpos, Vector2D<int> posdiff,
 		uint8_t buttons, uint8_t previous_buttons) {
 		const auto [layer, task_id] = FindActiveLayerTask();
-		if (!layer || !task_id) {
-			return;
-		}
+		if (!layer || !task_id) { return; }
 
 		const auto relpos = newpos - layer->GetPosition();
 		if (posdiff.x != 0 || posdiff.y != 0) {
@@ -155,9 +154,7 @@ void Mouse::OnInterrupt(uint8_t buttons, int8_t displacement_x, int8_t displacem
 		}
 	}
 	else if (previous_left_pressed && left_pressed) {
-		if (drag_layer_id_ > 0) {
-			layer_manager->MoveRelative(drag_layer_id_, posdiff);
-		}
+		if (drag_layer_id_ > 0) { layer_manager->MoveRelative(drag_layer_id_, posdiff); }
 	}
 	else if (previous_left_pressed && !left_pressed) {
 		drag_layer_id_ = 0;
