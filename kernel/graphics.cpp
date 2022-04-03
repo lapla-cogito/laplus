@@ -85,7 +85,8 @@ void DrawDesktop(PixelWriter& writer) {
 
 		//壁紙描画
 	int imgwidth, imgheight, bytes_per_pixel;
-	const char* filepath = "wallpaper.png";
+	char wallpath[]="wallpaper.png"
+	const char* filepath = wallpath;
 	const auto [fd, content, filesize] = MapFile(filepath);
 
 	unsigned char* image_data = stbi_load_from_memory(
