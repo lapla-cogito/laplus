@@ -186,7 +186,7 @@ void DrawTerminal(PixelWriter& writer, Vector2D<int> pos, Vector2D<int> size) {
 
 void DrawWindowTitle(PixelWriter& writer, const char* title, bool active) {
 	const auto win_w = writer.Width();
-	uint32_t bgcolor = 0x848484, titlecolor = 0x797979;
+	uint32_t bgcolor = 0xffffff, titlecolor = 0x797979;
 	if (active) { bgcolor = 0x000084, titlecolor = 0xffffff; }
 
 	FillRectangle(writer,
