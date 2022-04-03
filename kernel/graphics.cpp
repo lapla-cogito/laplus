@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <fcntl.h>
 #include "graphics.hpp"
-#include "syscall.h"
+#include "appsyscall.h"
 
 
 #define STBI_NO_THREAD_LOCALS
