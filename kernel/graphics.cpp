@@ -2,13 +2,14 @@
 #include <cstdio>
 #include <fcntl.h>
 #include "graphics.hpp"
-#include "appsyscall.h"
+//#include "appsyscall.h"
 
-
+/*
 #define STBI_NO_THREAD_LOCALS
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_STDIO
 #include "../apps/gviewer/stb_image.h"
+*/
 
 void RGBResv8BitPerColorPixelWriter::Write(Vector2D<int> pos, const PixelColor& c) {
 	auto p = PixelAt(pos);
@@ -51,6 +52,7 @@ void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 	}
 }
 
+/*
 std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath) {
 	SyscallResult res = SyscallOpenFile(filepath, O_RDONLY);
 	if (res.error) {
@@ -73,17 +75,18 @@ uint32_t GetColorGray(unsigned char* image_data) {
 	const uint32_t gray = image_data[0];
 	return gray << 16 | gray << 8 | gray;
 }
+*/
 
 //デスクトップ描画
 void DrawDesktop(PixelWriter& writer) {
 	const auto width = writer.Width();
 	const auto height = writer.Height();
-	/*FillRectangle(writer,
+	FillRectangle(writer,
 		{ 0, 0 },
 		{ width, height - 50 },
-		kDesktopBGColor);*/
-
-		//壁紙描画
+		kDesktopBGColor);
+	/*
+	//壁紙描画
 	int imgwidth, imgheight, bytes_per_pixel;
 	char wallpath[]="wallpaper.png"
 	const char* filepath = wallpath;
@@ -114,6 +117,7 @@ void DrawDesktop(PixelWriter& writer) {
 		}
 	}
 	//壁紙描画終了
+	*/
 
 	FillRectangle(writer,
 		{ 0, height - 50 },
