@@ -1,5 +1,11 @@
 //画像描画用
 #include "graphics.hpp"
+#include "../apps/syscall.h"
+
+
+#define STBI_NO_THREAD_LOCALS
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_NO_STDIO
 #include "../apps/gviewer/stb_image.h"
 
 void RGBResv8BitPerColorPixelWriter::Write(Vector2D<int> pos, const PixelColor& c) {
@@ -71,12 +77,12 @@ void DrawDesktop(PixelWriter& writer) {
 		kDesktopBGColor);*/
 
 		//壁紙描画
-	int width, height, bytes_per_pixel;
+	int imgwidth, imgheight, bytes_per_pixel;
 	const char* filepath = "wallpaper.png";
 	const auto [fd, content, filesize] = MapFile(filepath);
 
 	unsigned char* image_data = stbi_load_from_memory(
-		content, filesize, &width, &height, &bytes_per_pixel, 0);
+		content, filesize, &imgwidth, &imgheight, &bytes_per_pixel, 0);
 	//wallpaper.pngを読み込めなかったらデフォのfillrect
 	if (image_data == nullptr) {
 		//fprintf(stderr, "Failed to load image: %s\n", stbi_failure_reason());
@@ -89,12 +95,9 @@ void DrawDesktop(PixelWriter& writer) {
 		auto get_color = GetColorRGB;
 		if (bytes_per_pixel <= 2) { get_color = GetColorGray; }
 
-		const char* last_slash = strrchr(filepath, '/');
-		const char* filename = last_slash ? &last_slash[1] : filepath;
-
-		for (int y = 0; y < height; ++y) {
-			for (int x = 0; x < width; ++x) {
-				uint32_t c = get_color(&image_data[bytes_per_pixel * (y * width + x)]);
+		for (int y = 0; y < imgheight; ++y) {
+			for (int x = 0; x < imgwidth; ++x) {
+				uint32_t c = get_color(&image_data[bytes_per_pixel * (y * imgwidth + x)]);
 				FillRectangle(writer,
 					{ x - 1,y - 1 },
 					{ x,y },
