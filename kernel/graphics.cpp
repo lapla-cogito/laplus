@@ -1,4 +1,6 @@
 //画像描画用
+#include <cstdio>
+#include <fcntl.h>
 #include "graphics.hpp"
 #include "../apps/syscall.h"
 
@@ -65,6 +67,11 @@ std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath) {
 	}
 
 	return { fd, reinterpret_cast<uint8_t*>(res.value), filesize };
+}
+
+uint32_t GetColorGray(unsigned char* image_data) {
+	const uint32_t gray = image_data[0];
+	return gray << 16 | gray << 8 | gray;
 }
 
 //デスクトップ描画

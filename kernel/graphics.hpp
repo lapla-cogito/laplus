@@ -132,6 +132,8 @@ void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 
 std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath);
 
+uint32_t GetColorGray(unsigned char* image_data);
+
 const PixelColor kDesktopBGColor{ 45, 118, 237 };
 const PixelColor kDesktopFGColor{ 255, 255, 255 };
 
