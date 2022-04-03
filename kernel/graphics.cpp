@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include "graphics.hpp"
 #include "../apps/syscall.h"
+#include "syscall.hpp"
 
 
 #define STBI_NO_THREAD_LOCALS
