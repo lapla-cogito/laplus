@@ -8,8 +8,8 @@ extern "C" {
 #include <stdint.h>
 #endif
 
-#include "../kernel/logger.hpp"
-#include "../kernel/app_event.hpp"
+#include "logger.hpp"
+#include "app_event.hpp"
 
 struct SyscallResult {
 	uint64_t value;
