@@ -13,6 +13,7 @@
 #include "font.hpp"
 #include "timer.hpp"
 #include "keyboard.hpp"
+#include "fat.hpp"
 #include "app_event.hpp"
 
 #include "graphics.hpp"
@@ -88,7 +89,7 @@ namespace {
 	}
 }
 
-std::pair<uint64_t,int> MakeMapFile(int n,size_t* t) {
+std::pair<uint64_t,int> MakeMapFile(int n,size_t* t,int uku) {
 	const int fd = n;
 	size_t* file_size = reinterpret_cast<size_t*>(t);
 	__asm__("cli");
@@ -108,9 +109,9 @@ std::pair<uint64_t,int> MakeMapFile(int n,size_t* t) {
 }
 
 
-std::pair<size_t,int> OpenFile(const char* c,int n) {
-	const char* path = reinterpret_cast<const char*>(c);
-	const int flags = n;
+std::pair<size_t,int> OpenFile(const char* filepath,int flag) {
+	const char* path = reinterpret_cast<const char*>(filepath);
+	const int flags = flag;
 	__asm__("cli");
 	auto& task = task_manager->CurrentTask();
 	__asm__("sti");
@@ -124,10 +125,12 @@ std::pair<size_t,int> OpenFile(const char* c,int n) {
 		if ((flags & O_CREAT) == 0) {
 			return { 0, ENOENT };
 		}
+
 		auto [new_file, err] = CreateFile(path);
 		if (err) {
 			return { 0, err };
 		}
+
 		file = new_file;
 	}
 	else if (file->attr != fat::Attribute::kDirectory && post_slash) {
@@ -140,13 +143,13 @@ std::pair<size_t,int> OpenFile(const char* c,int n) {
 }
 
 std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath) {
-	auto res = OpenFile(filepath, O_RDONLY);
-	if (res.second) {
-		fprintf(stderr, "%s: %s\n", strerror(res.second), filepath);
+	SyscallResult res = OpenFile(filepath, O_RDONLY);
+	if (res.error) {
+		fprintf(stderr, "%s: %s\n", strerror(res.error), filepath);
 		exit(1);
 	}
 
-	const int fd = res.first;
+	const int fd = res.value;
 	size_t filesize;
 	res = MakeMapFile(fd, &filesize, 0);
 	if (res.error) {
@@ -154,7 +157,7 @@ std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath) {
 		exit(1);
 	}
 
-	return { fd, reinterpret_cast<uint8_t*>(res.first), filesize };
+	return { fd, reinterpret_cast<uint8_t*>(res.value), filesize };
 }
 
 uint32_t GetColorGray(unsigned char* image_data) {
@@ -173,7 +176,7 @@ void DrawDesktop(PixelWriter& writer) {
 
 	//壁紙描画
 	int imgwidth, imgheight, bytes_per_pixel;
-	char wallpath[]="wallpaper.png"
+	char wallpath[] = "wallpaper.png";
 	const char* filepath = wallpath;
 	const auto [fd, content, filesize] = MapFile(filepath);
 
