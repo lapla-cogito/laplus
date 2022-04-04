@@ -1,15 +1,17 @@
 //画像描画用
 #include <cstdio>
 #include <fcntl.h>
+#include <tuple>
+#include <cstdlib>
+#include <cstring>
 #include "graphics.hpp"
 //#include "appsyscall.h"
 
-/*
 #define STBI_NO_THREAD_LOCALS
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_STDIO
 #include "../apps/gviewer/stb_image.h"
-*/
+
 
 void RGBResv8BitPerColorPixelWriter::Write(Vector2D<int> pos, const PixelColor& c) {
 	auto p = PixelAt(pos);
@@ -52,30 +54,42 @@ void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 	}
 }
 
-/*
-std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath) {
-	SyscallResult res = SyscallOpenFile(filepath, O_RDONLY);
-	if (res.error) {
-		fprintf(stderr, "%s: %s\n", strerror(res.error), filepath);
-		exit(1);
+
+std::pair<size_t,int> Mapfile(const char* c,int n) {
+	const char* path = reinterpret_cast<const char*>(c);
+	const int flags = n;
+	__asm__("cli");
+	auto& task = task_manager->CurrentTask();
+	__asm__("sti");
+
+	if (strcmp(path, "@stdin") == 0) {
+		return { 0, 0 };
 	}
 
-	const int fd = res.value;
-	size_t filesize;
-	res = SyscallMapFile(fd, &filesize, 0);
-	if (res.error) {
-		fprintf(stderr, "%s\n", strerror(res.error));
-		exit(1);
+	auto [file, post_slash] = fat::FindFile(path);
+	if (file == nullptr) {
+		if ((flags & O_CREAT) == 0) {
+			return { 0, ENOENT };
+		}
+		auto [new_file, err] = CreateFile(path);
+		if (err) {
+			return { 0, err };
+		}
+		file = new_file;
+	}
+	else if (file->attr != fat::Attribute::kDirectory && post_slash) {
+		return { 0, ENOENT };
 	}
 
-	return { fd, reinterpret_cast<uint8_t*>(res.value), filesize };
+	size_t fd = AllocateFD(task);
+	task.Files()[fd] = std::make_unique<fat::FileDescriptor>(*file);
+	return { fd, 0 };
 }
 
 uint32_t GetColorGray(unsigned char* image_data) {
 	const uint32_t gray = image_data[0];
 	return gray << 16 | gray << 8 | gray;
 }
-*/
 
 //デスクトップ描画
 void DrawDesktop(PixelWriter& writer) {
