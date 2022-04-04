@@ -130,6 +130,8 @@ void DrawRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 	const Vector2D<int>& size, const PixelColor& c);
 
+std::pair<uint64_t, int> MakeMapFile(int n, size_t* t);
+std::pair<size_t, int> OpenFile(const char* c, int n);
 std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath);
 
 uint32_t GetColorGray(unsigned char* image_data);

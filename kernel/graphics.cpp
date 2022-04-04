@@ -1,9 +1,20 @@
 //画像描画用
-#include <cstdio>
+#include "syscall.hpp"
+#include <array>
+#include <cstdint>
+#include <cerrno>
+#include <cmath>
 #include <fcntl.h>
-#include <tuple>
-#include <cstdlib>
-#include <cstring>
+#include "asmfunc.h"
+#include "msr.hpp"
+#include "logger.hpp"
+#include "task.hpp"
+#include "terminal.hpp"
+#include "font.hpp"
+#include "timer.hpp"
+#include "keyboard.hpp"
+#include "app_event.hpp"
+
 #include "graphics.hpp"
 //#include "appsyscall.h"
 
@@ -54,8 +65,50 @@ void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos,
 	}
 }
 
+namespace {
+	size_t AllocateFD(Task& task) {
+		const size_t num_files = task.Files().size();
+		for (size_t i = 0; i < num_files; ++i) {
+			if (!task.Files()[i]) {
+				return i;
+			}
+		}
+		task.Files().emplace_back();
+		return num_files;
+	}
 
-std::pair<size_t,int> Mapfile(const char* c,int n) {
+	std::pair<fat::DirectoryEntry*, int> CreateFile(const char* path) {
+		auto [file, err] = fat::CreateFile(path);
+		switch (err.Cause()) {
+		case Error::kIsDirectory: return { file, EISDIR };
+		case Error::kNoSuchEntry: return { file, ENOENT };
+		case Error::kNoEnoughMemory: return { file, ENOSPC };
+		default: return { file, 0 };
+		}
+	}
+}
+
+std::pair<uint64_t,int> MakeMapFile(int n,size_t* t) {
+	const int fd = n;
+	size_t* file_size = reinterpret_cast<size_t*>(t);
+	__asm__("cli");
+	auto& task = task_manager->CurrentTask();
+	__asm__("sti");
+
+	if (fd < 0 || task.Files().size() <= fd || !task.Files()[fd]) {
+		return { 0, EBADF };
+	}
+
+	*file_size = task.Files()[fd]->Size();
+	const uint64_t vaddr_end = task.FileMapEnd();
+	const uint64_t vaddr_begin = (vaddr_end - *file_size) & 0xffff'ffff'ffff'f000;
+	task.SetFileMapEnd(vaddr_begin);
+	task.FileMaps().push_back(FileMapping{ fd, vaddr_begin, vaddr_end });
+	return { vaddr_begin, 0 };
+}
+
+
+std::pair<size_t,int> OpenFile(const char* c,int n) {
 	const char* path = reinterpret_cast<const char*>(c);
 	const int flags = n;
 	__asm__("cli");
@@ -86,6 +139,24 @@ std::pair<size_t,int> Mapfile(const char* c,int n) {
 	return { fd, 0 };
 }
 
+std::tuple<int, uint8_t*, size_t> MapFile(const char* filepath) {
+	auto res = OpenFile(filepath, O_RDONLY);
+	if (res.second) {
+		fprintf(stderr, "%s: %s\n", strerror(res.second), filepath);
+		exit(1);
+	}
+
+	const int fd = res.first;
+	size_t filesize;
+	res = MakeMapFile(fd, &filesize, 0);
+	if (res.error) {
+		fprintf(stderr, "%s\n", strerror(res.error));
+		exit(1);
+	}
+
+	return { fd, reinterpret_cast<uint8_t*>(res.first), filesize };
+}
+
 uint32_t GetColorGray(unsigned char* image_data) {
 	const uint32_t gray = image_data[0];
 	return gray << 16 | gray << 8 | gray;
@@ -99,7 +170,7 @@ void DrawDesktop(PixelWriter& writer) {
 		{ 0, 0 },
 		{ width, height - 50 },
 		kDesktopBGColor);
-	/*
+
 	//壁紙描画
 	int imgwidth, imgheight, bytes_per_pixel;
 	char wallpath[]="wallpaper.png"
@@ -110,7 +181,7 @@ void DrawDesktop(PixelWriter& writer) {
 		content, filesize, &imgwidth, &imgheight, &bytes_per_pixel, 0);
 	//wallpaper.pngを読み込めなかったらデフォのfillrect
 	if (image_data == nullptr) {
-		//fprintf(stderr, "Failed to load image: %s\n", stbi_failure_reason());
+		fprintf(stderr, "Failed to load image: %s\n", stbi_failure_reason());
 		FillRectangle(writer,
 			{ 0, 0 },
 			{ width, height - 50 },
@@ -131,7 +202,6 @@ void DrawDesktop(PixelWriter& writer) {
 		}
 	}
 	//壁紙描画終了
-	*/
 
 	FillRectangle(writer,
 		{ 0, height - 50 },
