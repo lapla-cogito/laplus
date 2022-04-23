@@ -5,10 +5,10 @@
 #include <cstdio>
 #include <cstdlib>
 
-vector < string > split(const string & s, char delim) {
-  vector < string > elems;
-  stringstream ss(s);
-  string item;
+vector <std::string> split(const std::string & s, char delim) {
+  vector <std::string> elems;
+  std::stringstream ss(s);
+  std::string item;
   while (getline(ss, item, delim)) {
     if (!item.empty()) {
       elems.push_back(item);
