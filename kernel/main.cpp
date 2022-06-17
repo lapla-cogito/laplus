@@ -33,7 +33,7 @@
 #include <numeric>
 #include <vector>
 
-#include "//network/network.h"
+#include "network/network.h"
 
 __attribute__((format(printf, 1, 2))) int printk(const char *format, ...) {
     va_list ap;
