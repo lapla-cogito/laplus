@@ -18,3 +18,14 @@
 *.out
 *.app
 *.json
+*.dot
+*.html
+*.css
+*.js
+*.png
+*.svg
+*.pdf
+*.tex
+*.eps
+*.sty
+*.log
