@@ -1,3 +1,10 @@
+/**
+ * @file tcp.c
+ *
+ * @brief TCPプロトコルの定義が記述されたファイル
+ *
+ * @note TCP(Transmission Control Protocol)はコネクション型の接続なのでデータを送信する際の制御機能が必要
+ */
 #include "tcp.h"
 #include "benri.h"
 #include "ip.h"
@@ -49,6 +56,7 @@ struct pseudo_hdr {
     uint16_t len;
 };
 
+/**TCPヘッダ*/
 struct tcp_hdr {
     uint16_t src;
     uint16_t dst;
@@ -69,6 +77,7 @@ struct tcp_segment_info {
     uint16_t up;
 };
 
+/**TCPのプロトコルコントロールブロック*/
 struct tcp_pcb {
     int state;
     int mode; /* user command mode */
@@ -90,7 +99,7 @@ struct tcp_pcb {
     } rcv;
     uint32_t irs;
     uint16_t mtu;
-    uint16_t mss;
+    uint16_t mss;      /**最大セグメント長(Maximum Segment Size)*/
     uint8_t buf[8192]; /* receive buffer */
     cond_t cond;
     struct queue_head queue; /* retransmit queue */
@@ -173,12 +182,6 @@ static void tcp_dump(const uint8_t *data, size_t len) {
     funlockfile(stderr);
 }
 
-/*
- * TCP Protocol Control Block (PCB)
- *
- * NOTE: TCP PCB functions must be called after mutex locked
- */
-
 static struct tcp_pcb *tcp_pcb_alloc(void) {
     struct tcp_pcb *pcb;
 
@@ -208,6 +211,7 @@ static void tcp_pcb_release(struct tcp_pcb *pcb) {
     while((est = (struct tcp_pcb *)queue_pop(&pcb->backlog)) != NULL) {
         tcp_pcb_release(est);
     }
+
     debugf("released, local=%s:%d, foreign=%s:%u",
            ip_addr_ntop(pcb->local.addr, addr1, sizeof(addr1)),
            ntoh16(pcb->local.port),
@@ -254,9 +258,7 @@ static struct tcp_pcb *tcp_pcb_get(int id) {
 static int tcp_pcb_id(struct tcp_pcb *pcb) { return indexof(pcbs, pcb); }
 
 /*
- * TCP Retransmit
- *
- * NOTE: TCP Retransmit functions must be called after mutex locked
+ * TCP再送
  */
 
 static int tcp_retransmit_queue_add(struct tcp_pcb *pcb, uint32_t seq,

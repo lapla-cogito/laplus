@@ -1,4 +1,8 @@
-//カーネル
+/**
+ * @file main.cpp
+ *
+ * @brief カーネル本体が記述されたファイル
+ */
 #include "acpi.hpp"
 #include "asmfunc.h"
 #include "console.hpp"
@@ -14,6 +18,7 @@
 #include "memory_map.hpp"
 #include "message.hpp"
 #include "mouse.hpp"
+#include "network/network.h"
 #include "paging.hpp"
 #include "pci.hpp"
 #include "segment.hpp"
@@ -32,8 +37,6 @@
 #include <limits>
 #include <numeric>
 #include <vector>
-
-#include "network/network.h"
 
 __attribute__((format(printf, 1, 2))) int printk(const char *format, ...) {
     va_list ap;

@@ -1,24 +1,32 @@
+/**
+ * @file ip.c
+ *
+ * @brief IPプロトコルの定義が記述されたファイル
+ *
+ * @note 今のところIPv4のみ
+ */
 #include "ip.h"
 #include "arp.h"
 #include "benri.h"
-#include "net.h"
+#include "network.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+/**IPv4のヘッダ*/
 struct ip_hdr {
     uint8_t vhl;
-    uint8_t tos;
-    uint16_t total;
-    uint16_t id;
-    uint16_t offset;
-    uint8_t ttl;
-    uint8_t protocol;
-    uint16_t sum;
-    ip_addr_t src;
-    ip_addr_t dst;
-    uint8_t options[0];
+    uint8_t tos; /**パケットのプライオリティ情報(Type of Service)*/
+    uint16_t total;  /**パケット長*/
+    uint16_t id;     /**識別子*/
+    uint16_t offset; /**Fragment offset*/
+    uint8_t ttl; /**パケットの寿命(0で破棄される)(Time to Live)*/
+    uint8_t protocol;   /**ヘッダに続くデータ部の中身を示す*/
+    uint16_t sum;       /**checksum*/
+    ip_addr_t src;      /**送信元IPアドレス*/
+    ip_addr_t dst;      /**送信先IPアドレス*/
+    uint8_t options[0]; /**オプション*/
 };
 
 struct ip_protocol {
@@ -51,7 +59,7 @@ int ip_addr_pton(const char *p, ip_addr_t *n) {
     long ret;
 
     sp = (char *)p;
-    for(idx = 0; idx < 4; idx++) {
+    for(idx = 0; idx < 4; ++idx) {
         ret = strtol(sp, &ep, 10);
         if(ret < 0 || ret > 255) { return -1; }
         if(ep == sp) { return -1; }

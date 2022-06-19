@@ -4,8 +4,7 @@
 #include <stdint.h>
 
 #define UDP_ENDPOINT_STR_LEN                                                   \
-    (IP_ADDR_STR_LEN + 6) /* xxx.xxx.xxx.xxx:yyyyy\n                           \
-                           */
+    (IP_ADDR_STR_LEN + 6) /* xxx.xxx.xxx.xxx:yyyyy*/
 
 struct udp_endpoint {
     ip_addr_t addr;

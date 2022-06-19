@@ -1,3 +1,8 @@
+/**
+ * @file ethernet.c
+ *
+ * @brief イーサネットプロトコルの定義が記述されたファイル
+ */
 #include "ethernet.h"
 #include "benri.h"
 #include "network.h"
@@ -7,10 +12,11 @@
 #include <string.h>
 #include <sys/types.h>
 
+/**ethernetのヘッダ*/
 struct ether_hdr {
-    uint8_t dst[ETHER_ADDR_LEN];
-    uint8_t src[ETHER_ADDR_LEN];
-    uint16_t type;
+    uint8_t dst[ETHER_ADDR_LEN]; /**宛先MACアドレス(6オクテット)*/
+    uint8_t src[ETHER_ADDR_LEN]; /**送信元MACアドレス(6オクテット)*/
+    uint16_t type;               /**タイプ(2オクテット)*/
 };
 
 const uint8_t ETHER_ADDR_ANY[ETHER_ADDR_LEN] = {0x00, 0x00, 0x00,
@@ -24,6 +30,7 @@ int ether_addr_pton(const char *p, uint8_t *n) {
     long val;
 
     if(!p || !n) { return -1; }
+
     for(index = 0; index < ETHER_ADDR_LEN; index++) {
         val = strtol(p, &ep, 16);
         if(ep == p || val < 0 || val > 0xff ||
@@ -97,7 +104,6 @@ int ether_input(const uint8_t *data, size_t len, struct net_device *dev) {
     }
     type = ntoh16(hdr->type);
     debugf("dev=%s, type=0x%04x, len=%lu", dev->name, type, len);
-    // ether_dump(data, len);
     return net_input_handler(type, (uint8_t *)(hdr + 1), len - sizeof(*hdr),
                              dev);
 }

@@ -1,3 +1,8 @@
+/**
+ * @file e1000.cpp
+ *
+ * @brief E1000のNICの実装
+ */
 #include "e1000.hpp"
 #include "../benri.h"
 #include "../ethernet.h"

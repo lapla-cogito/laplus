@@ -1,3 +1,10 @@
+/**
+ * @file udp.c
+ *
+ * @brief UDPプロトコルの定義が記述されたファイル
+ *
+ * @note UDP(User Datagram Protocol)はコネクションレス型
+ */
 #include "udp.h"
 #include "benri.h"
 #include "ip.h"
@@ -27,15 +34,17 @@ struct pseudo_hdr {
     uint16_t len;
 };
 
+/**UDPヘッダ*/
 struct udp_hdr {
-    uint16_t src;
-    uint16_t dst;
-    uint16_t len;
-    uint16_t sum;
+    uint16_t src; /**送信元ポート番号*/
+    uint16_t dst; /**送信先ポート番号*/
+    uint16_t len; /**パケット長*/
+    uint16_t sum; /**checksum*/
 };
 
+/**UDPのプロトコルコントロールブロック*/
 struct udp_pcb {
-    int state;
+    int state; /**ステート情報(両方向のシーケンス番号等)*/
     struct udp_endpoint local;
     struct queue_head queue; /* receive queue */
     cond_t cond;
@@ -88,12 +97,6 @@ static void udp_dump(const uint8_t *data, size_t len) {
 #endif
     funlockfile(stderr);
 }
-
-/*
- * UDP Protocol Control Block (PCB)
- *
- * NOTE: UDP PCB functions must be called after mutex locked
- */
 
 static struct udp_pcb *udp_pcb_alloc(void) {
     struct udp_pcb *pcb;
@@ -184,7 +187,6 @@ static void udp_input(const uint8_t *data, size_t len, ip_addr_t src,
            ip_addr_ntop(src, addr1, sizeof(addr1)), ntoh16(hdr->src),
            ip_addr_ntop(dst, addr2, sizeof(addr2)), ntoh16(hdr->dst), len,
            len - sizeof(*hdr));
-    // udp_dump(data, len);
     mutex_lock(&mutex);
     pcb = udp_pcb_select(dst, hdr->dst);
     if(!pcb) {
