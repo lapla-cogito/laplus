@@ -1,3 +1,8 @@
+/**
+ * @file network.c
+ *
+ * @brief ネットワーク機能の包括的処理
+ */
 #include "network.h"
 #include "arp.h"
 #include "benri.h"
@@ -270,7 +275,7 @@ void net_timer_handler() {
     }
 }
 
-int net_run(void) {
+int net_run() {
     struct net_device *dev;
 
     debugf("open all devices...");
@@ -279,7 +284,7 @@ int net_run(void) {
     return 0;
 }
 
-void net_shutdown(void) {
+void net_shutdown() {
     struct net_device *dev;
 
     debugf("close all devices...");
@@ -287,11 +292,11 @@ void net_shutdown(void) {
     debugf("shutdown");
 }
 
-void net_interrupt(void) {
+void net_interrupt() {
     // ignore
 }
 
-int net_init(void) {
+int net_init() {
     if(arp_init() == -1) {
         errorf("arp_init() failure");
         return -1;

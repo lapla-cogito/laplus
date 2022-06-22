@@ -198,6 +198,7 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     InitializeTSS();
     InitializeInterrupt();
 
+    /*FATモジュールの初期化*/
     fat::Initialize(volume_image);
     InitializeFont();
     InitializePCI();
@@ -224,6 +225,8 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     InitializeKeyboard();
     InitializeMouse();
 
+    net_init();
+
     app_loads = new std::map<fat::DirectoryEntry *, AppLoadInfo>;
     task_manager->NewTask().InitContext(TaskTerminal, 0).Wakeup();
 
@@ -231,7 +234,7 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
 
     char str[128];
 
-    while(true) {
+    while(1) {
         __asm__("cli");
         const auto tick = timer_manager->CurrentTick();
         __asm__("sti");
@@ -268,6 +271,8 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
                 layer_manager->Draw(text_window_layer_id);
             }
             break;
+
+        /**アクティブウィンドウによりキーの処理を変える*/
         case Message::kKeyPush:
             if(auto act = active_layer->GetActive();
                act == text_window_layer_id) {

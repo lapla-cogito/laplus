@@ -1,7 +1,9 @@
 /**
  * @file e1000.cpp
  *
- * @brief E1000のNICの実装
+ * @brief E1000のNICドライバの実装
+ *
+ * @note E1000はエミュレートバージョン(実機でも仮想マシンでも動く)ので都合が良い
  */
 #include "e1000.hpp"
 #include "../benri.h"
@@ -34,6 +36,7 @@ static void e1000_reg_write(struct e1000 *adapter, uint16_t reg, uint32_t val) {
     *(volatile uint32_t *)(adapter->mmio_base + reg) = val;
 }
 
+/**e1000ドライバを使用準備*/
 static int e1000_open(struct net_device *dev) {
     struct e1000 *adapter = (struct e1000 *)dev->priv;
     // enable interrupts
@@ -51,6 +54,7 @@ static int e1000_open(struct net_device *dev) {
     return 0;
 }
 
+/**e1000ドライバをclose*/
 static int e1000_close(struct net_device *dev) {
     struct e1000 *adapter = (struct e1000 *)dev->priv;
     // disable interrupts

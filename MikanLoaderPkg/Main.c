@@ -190,7 +190,7 @@ const CHAR16 *GetPixelFormatUnicode(EFI_GRAPHICS_PIXEL_FORMAT fmt) {
     }
 }
 
-//�L�[�����҂�
+/**入力待機*/
 EFI_STATUS WaitForPressAnyKey() {
     EFI_STATUS status;
 

@@ -3,7 +3,7 @@
  *
  * @brief IPプロトコルの定義が記述されたファイル
  *
- * @note 今のところIPv4のみ
+ * @note 今のところIPv4のみ(IPv6は工事中)
  */
 #include "ip.h"
 #include "arp.h"
@@ -27,6 +27,17 @@ struct ip_hdr {
     ip_addr_t src;      /**送信元IPアドレス*/
     ip_addr_t dst;      /**送信先IPアドレス*/
     uint8_t options[0]; /**オプション*/
+};
+
+/**IPv6のヘッダ*/
+struct ip_hdr_v6 {
+    uint8_t vhl;
+    uint16_t total; /**ペイロード長*/
+    uint8_t
+        nex_hdr; /**次のヘッダ(拡張ヘッダがある場合,そのプロトコル番号が入る)*/
+    uint8_t hop_lim;  /**ホップリミット(ttlと同じ)*/
+    ip_addr_v6_t src; /**送信元IPアドレス*/
+    ip_addr_v6_t dst; /**送信先IPアドレス*/
 };
 
 struct ip_protocol {
@@ -61,8 +72,8 @@ int ip_addr_pton(const char *p, ip_addr_t *n) {
     sp = (char *)p;
     for(idx = 0; idx < 4; ++idx) {
         ret = strtol(sp, &ep, 10);
-        if(ret < 0 || ret > 255) { return -1; }
-        if(ep == sp) { return -1; }
+        if(ret < 0 || ret > 255 || ep == sp) { return -1; }
+
         if((idx == 3 && *ep != '\0') || (idx != 3 && *ep != '.')) { return -1; }
         ((uint8_t *)n)[idx] = ret;
         sp = ep + 1;

@@ -3,7 +3,8 @@
  *
  * @brief TCPプロトコルの定義が記述されたファイル
  *
- * @note TCP(Transmission Control Protocol)はコネクション型の接続なのでデータを送信する際の制御機能が必要
+ * @note TCP(Transmission Control
+ * Protocol)はコネクション型の接続なのでデータを送信する際の制御機能が必要
  */
 #include "tcp.h"
 #include "benri.h"
@@ -13,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**コントロールフラッグ*/
 #define TCP_FLG_FIN 0x01
 #define TCP_FLG_SYN 0x02
 #define TCP_FLG_RST 0x04
@@ -28,6 +30,7 @@
 #define TCP_PCB_MODE_RFC793 1
 #define TCP_PCB_MODE_SOCKET 2
 
+/**TCPのPCBの状態*/
 #define TCP_PCB_STATE_FREE 0
 #define TCP_PCB_STATE_CLOSED 1
 #define TCP_PCB_STATE_LISTEN 2
@@ -48,25 +51,34 @@
 #define TCP_SOURCE_PORT_MIN 49152
 #define TCP_SOURCE_PORT_MAX 65535
 
+/**疑似ヘッダ(checksumに利用)*/
 struct pseudo_hdr {
-    uint32_t src;
-    uint32_t dst;
-    uint8_t zero;
-    uint8_t protocol;
-    uint16_t len;
+    uint32_t src;     /**送信元IPアドレス*/
+    uint32_t dst;     /**送信先IPアドレス*/
+    uint8_t zero;     /**パディング*/
+    uint8_t protocol; /**プロトコル番号*/
+    uint16_t len;     /**UDPパケット長*/
 };
-
 /**TCPヘッダ*/
 struct tcp_hdr {
-    uint16_t src;
-    uint16_t dst;
-    uint32_t seq;
-    uint32_t ack;
-    uint8_t off;
-    uint8_t flg;
-    uint16_t wnd;
-    uint16_t sum;
-    uint16_t up;
+    uint16_t src; /**送信元ポート番号*/
+    uint16_t dst; /**送信先ポート番号*/
+    uint32_t seq; /**シーケンス番号(相手から受信した確認応答番号)*/
+    uint32_t ack; /**確認応答番号(相手から受信したseq+データサイズ)*/
+    uint8_t off; /**データオフセット*/
+    uint8_t
+        flg;      /**
+                   *コントロールフラグ(URG, ACK, PSH, RST, SYN, FIN)からなる6bit
+                   *URG(Urgent):緊急に処理すべきデータが存在
+                   *ACK(Acknowledgement):確認応答番号のフィールドが有効(コネクション確立時以外は値が固定で1)
+                   *PSH(Push):受信データをバッファリングせずに即座にアプリケーション層に渡す
+                   *RST(Reset):コネクション強制切断(異常検知時)
+                   *SYN(Synchronize):コネクション確立要求
+                   *FIN(Fin):コネクション正常終了
+                   */
+    uint16_t wnd; /**ウィンドウサイズ(受信側が一度の受信できる最大データ量)*/
+    uint16_t sum; /**checksum*/
+    uint16_t up; /**緊急ポインタ(緊急データの開始位置を示す)*/
 };
 
 struct tcp_segment_info {
@@ -182,10 +194,10 @@ static void tcp_dump(const uint8_t *data, size_t len) {
     funlockfile(stderr);
 }
 
-static struct tcp_pcb *tcp_pcb_alloc(void) {
+static struct tcp_pcb *tcp_pcb_alloc() {
     struct tcp_pcb *pcb;
 
-    for(pcb = pcbs; pcb < tailof(pcbs); pcb++) {
+    for(pcb = pcbs; pcb < tailof(pcbs); ++pcb) {
         if(pcb->state == TCP_PCB_STATE_FREE) {
             pcb->state = TCP_PCB_STATE_CLOSED;
             cond_init(&pcb->cond, NULL);
@@ -257,10 +269,7 @@ static struct tcp_pcb *tcp_pcb_get(int id) {
 
 static int tcp_pcb_id(struct tcp_pcb *pcb) { return indexof(pcbs, pcb); }
 
-/*
- * TCP再送
- */
-
+/**TCP再送*/
 static int tcp_retransmit_queue_add(struct tcp_pcb *pcb, uint32_t seq,
                                     uint8_t flg, uint8_t *data, size_t len) {
     struct tcp_queue_entry *entry;
@@ -821,7 +830,7 @@ static void tcp_input(const uint8_t *data, size_t len, ip_addr_t src,
            ip_addr_ntop(src, addr1, sizeof(addr1)), ntoh16(hdr->src),
            ip_addr_ntop(dst, addr2, sizeof(addr2)), ntoh16(hdr->dst), len,
            len - sizeof(*hdr));
-    // tcp_dump(data, len);
+
     local.addr = dst;
     local.port = hdr->dst;
     foreign.addr = src;
@@ -871,7 +880,7 @@ static void tcp_timer(void) {
     mutex_unlock(&mutex);
 }
 
-int tcp_init(void) {
+int tcp_init() {
     struct timeval interval = {0, 100000};
 
     if(ip_protocol_register(IP_PROTOCOL_TCP, tcp_input) == -1) {
@@ -979,7 +988,7 @@ int tcp_state(int id) {
  * TCP User Command (Socket)
  */
 
-int tcp_open(void) {
+int tcp_open() {
     struct tcp_pcb *pcb;
     int id;
 

@@ -1,3 +1,8 @@
+/**
+ * @file arp.c
+ *
+ * @brief ARP(アドレス解決のためのプロトコル)の実装
+ */
 #include "arp.h"
 #include "benri.h"
 #include "ethernet.h"
@@ -24,27 +29,30 @@
 #define ARP_CACHE_STATE_RESOLVED 2
 #define ARP_CACHE_STATE_STATIC 3
 
+/**ARPヘッダ*/
 struct arp_hdr {
-    uint16_t hrd;
-    uint16_t pro;
-    uint8_t hln;
-    uint8_t pln;
-    uint16_t op;
+    uint16_t hrd; /**ハードウェアタイプ*/
+    uint16_t pro; /**プロトコルタイプ*/
+    uint8_t hln;  /**ハードウェア長(6bytes)*/
+    uint8_t pln;  /**プロトコル長(4bytes)*/
+    uint16_t op;  /**オペレーション(ARP request->1, ARP reply->2)*/
 };
 
+/**ARPパケット本体*/
 struct arp_ether {
     struct arp_hdr hdr;
-    uint8_t sha[ETHER_ADDR_LEN];
-    uint8_t spa[IP_ADDR_LEN];
-    uint8_t tha[ETHER_ADDR_LEN];
-    uint8_t tpa[IP_ADDR_LEN];
+    uint8_t sha[ETHER_ADDR_LEN]; /**送信元のMACアドレス*/
+    uint8_t spa[IP_ADDR_LEN];    /**送信元のIPアドレス*/
+    uint8_t tha[ETHER_ADDR_LEN]; /**探索先のMACアドレス*/
+    uint8_t tpa[IP_ADDR_LEN];    /**探索先のIPアドレス*/
 };
 
+/**ARPキャッシュ(テーブル)*/
 struct arp_cache {
-    unsigned char state;
-    ip_addr_t pa;
-    uint8_t ha[ETHER_ADDR_LEN];
-    struct timeval timestamp;
+    unsigned char state;        /**状態表示*/
+    ip_addr_t pa;               /**宛先IPアドレス*/
+    uint8_t ha[ETHER_ADDR_LEN]; /**宛先MACアドレス(ARP requestにより取得)*/
+    struct timeval timestamp; /**取得時刻*/
 };
 
 static mutex_t mutex = MUTEX_INITIALIZER;

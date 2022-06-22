@@ -26,12 +26,13 @@
 #define UDP_SOURCE_PORT_MIN 49152
 #define UDP_SOURCE_PORT_MAX 65535
 
+/**疑似ヘッダ(checksumに利用)*/
 struct pseudo_hdr {
-    uint32_t src;
-    uint32_t dst;
-    uint8_t zero;
-    uint8_t protocol;
-    uint16_t len;
+    uint32_t src;     /**送信元IPアドレス*/
+    uint32_t dst;     /**送信先IPアドレス*/
+    uint8_t zero;     /**パディング*/
+    uint8_t protocol; /**プロトコル番号*/
+    uint16_t len;     /**UDPパケット長*/
 };
 
 /**UDPヘッダ*/
@@ -83,6 +84,7 @@ char *udp_endpoint_ntop(struct udp_endpoint *n, char *p, size_t size) {
     return p;
 }
 
+/**UDPのダンプ(パケット表示)*/
 static void udp_dump(const uint8_t *data, size_t len) {
     struct udp_hdr *hdr;
 

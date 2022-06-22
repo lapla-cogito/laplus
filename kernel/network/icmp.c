@@ -1,3 +1,11 @@
+/**
+ * @file icmp.c
+ *
+ * @brief ICMP(Internet Control Message Protocol)の実装
+ *
+ * @note
+ * IPパケットが目的ホストまで到達したかを確認したりIPパケットの破棄を通知したりする
+ */
 #include "icmp.h"
 #include "benri.h"
 #include "ip.h"
@@ -7,13 +15,30 @@
 
 #define ICMP_BUFSIZ IP_PAYLOAD_SIZE_MAX
 
+/**ICMPヘッダ*/
 struct icmp_hdr {
-    uint8_t type;
-    uint8_t code;
-    uint16_t sum;
+    uint8_t type; /**ICMPのタイプ
+    see also: http://www.iana.org/assignments/icmp-parameters
+    0: エコー応答
+    3: 到達不能
+    5: リダイレクト(送信元ホストが最適でない送信経路使用)
+    8: エコー要求
+    9: ルータ通知
+    10: ルータ要求
+    11: 時間超過(ttl超過, tracerouteはこれを応用)
+    12: パラメータ異常
+    13: タイムスタンプ応答
+    14: タイムスタンプ要求
+    42: 拡張エコー要求
+    43: 拡張エコー応答
+    */
+    uint8_t
+        code; /**ICMPタイプによって定義が異なる(特にタイプ3の到達不能の際に活躍)*/
+    uint16_t sum; /**checksum*/
     uint32_t values;
 };
 
+/**ICMPのエコー(pingはこれを応用)*/
 struct icmp_echo {
     uint8_t type;
     uint8_t code;
@@ -46,8 +71,9 @@ static const char *icmp_type_ntoa(uint8_t type) {
         return "InformationRequest";
     case ICMP_TYPE_INFO_REPLY:
         return "InformationReply";
+    default:
+        return "Unknown";
     }
-    return "Unknown";
 }
 
 static void icmp_dump(const uint8_t *data, size_t len) {
@@ -95,7 +121,6 @@ void icmp_input(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst,
     }
     debugf("%s => %s, len=%lu", ip_addr_ntop(src, addr1, sizeof(addr1)),
            ip_addr_ntop(dst, addr2, sizeof(addr2)), len);
-    // icmp_dump(data, len);
     switch(hdr->type) {
     case ICMP_TYPE_ECHO:
         if(dst != iface->unicast) {
@@ -107,7 +132,6 @@ void icmp_input(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst,
                     (uint8_t *)(hdr + 1), len - sizeof(*hdr), dst, src);
         break;
     default:
-        /* ignore */
         break;
     }
 }

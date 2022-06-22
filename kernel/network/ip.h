@@ -24,6 +24,7 @@
 #define IP_IFACE(x) ((struct ip_iface *)(x))
 
 typedef uint32_t ip_addr_t;
+typedef __uint128_t ip_addr_v6_t;
 
 struct ip_iface {
     struct net_iface iface;

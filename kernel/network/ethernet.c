@@ -31,7 +31,7 @@ int ether_addr_pton(const char *p, uint8_t *n) {
 
     if(!p || !n) { return -1; }
 
-    for(index = 0; index < ETHER_ADDR_LEN; index++) {
+    for(index = 0; index < ETHER_ADDR_LEN; ++index) {
         val = strtol(p, &ep, 16);
         if(ep == p || val < 0 || val > 0xff ||
            (index < ETHER_ADDR_LEN - 1 && *ep != ':')) {
@@ -83,7 +83,6 @@ int ether_transmit_helper(struct net_device *dev, uint16_t type,
     if(len < ETHER_PAYLOAD_SIZE_MIN) { pad = ETHER_PAYLOAD_SIZE_MIN - len; }
     flen = sizeof(*hdr) + len + pad;
     debugf("dev=%s, type=0x%04x, len=%lu", dev->name, type, flen);
-    // ether_dump(frame, flen);
     return callback(dev, frame, flen) == (ssize_t)flen ? 0 : -1;
 }
 

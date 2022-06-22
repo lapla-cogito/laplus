@@ -4,12 +4,12 @@
 #undef NULL
 #endif
 
-#include <Uefi.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
+#include <Uefi.h>
 
 #undef NULL
 #include <cstddef>
 
 #define EFIAPI __attribute__((ms_abi))
 
-inline EFI_RUNTIME_SERVICES* uefi_rt;
+inline EFI_RUNTIME_SERVICES *uefi_rt;
