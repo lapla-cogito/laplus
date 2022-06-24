@@ -276,7 +276,7 @@ static int tcp_retransmit_queue_add(struct tcp_pcb *pcb, uint32_t seq,
 
     entry = (struct tcp_queue_entry *)calloc(1, sizeof(*entry) + len);
     if(!entry) {
-        errorf("calloc() failure");
+        errorf("calloc() in tcp_retransmit_queue_add() failure");
         return -1;
     }
     entry->rto = TCP_DEFAULT_RTO;

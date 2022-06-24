@@ -16,11 +16,11 @@
 
 /**IPv4のヘッダ*/
 struct ip_hdr {
-    uint8_t vhl;
+    uint8_t vhl; /**バージョン(4bit)とヘッダ長(4bit)*/
     uint8_t tos; /**パケットのプライオリティ情報(Type of Service)*/
-    uint16_t total;  /**パケット長*/
-    uint16_t id;     /**識別子*/
-    uint16_t offset; /**Fragment offset*/
+    uint16_t total; /**パケット長*/
+    uint16_t id;    /**識別子*/
+    uint16_t offset; /**フラグ(3bit)とフラグメントオフセット(13bit)*/
     uint8_t ttl; /**パケットの寿命(0で破棄される)(Time to Live)*/
     uint8_t protocol;   /**ヘッダに続くデータ部の中身を示す*/
     uint16_t sum;       /**checksum*/
@@ -40,9 +40,10 @@ struct ip_hdr_v6 {
     ip_addr_v6_t dst; /**送信先IPアドレス*/
 };
 
+/**プロトコル構造体*/
 struct ip_protocol {
-    struct ip_protocol *next;
-    uint8_t type;
+    struct ip_protocol *next; /**次のプロトコルを指すポインタ*/
+    uint8_t type;             /**タイプ*/
     void (*handler)(const uint8_t *data, size_t len, ip_addr_t src,
                     ip_addr_t dst, struct ip_iface *iface);
 };
@@ -58,12 +59,11 @@ struct ip_route {
 const ip_addr_t IP_ADDR_ANY = 0x00000000;       /* 0.0.0.0 */
 const ip_addr_t IP_ADDR_BROADCAST = 0xffffffff; /* 255.255.255.255 */
 
-/* NOTE: if you want to add/delete the entries after net_run(), you need to
- * protect these lists with a mutex. */
 static struct ip_iface *ifaces;
 static struct ip_protocol *protocols;
 static struct ip_route *routes;
 
+/**文字列->ip_addr_t*/
 int ip_addr_pton(const char *p, ip_addr_t *n) {
     char *sp, *ep;
     int idx;
@@ -81,6 +81,7 @@ int ip_addr_pton(const char *p, ip_addr_t *n) {
     return 0;
 }
 
+/**ip_addr_t->文字列*/
 char *ip_addr_ntop(const ip_addr_t n, char *p, size_t size) {
     uint8_t *u8;
 
@@ -89,6 +90,7 @@ char *ip_addr_ntop(const ip_addr_t n, char *p, size_t size) {
     return p;
 }
 
+/**for debug*/
 void ip_dump(const uint8_t *data, size_t len) {
     struct ip_hdr *hdr;
     uint8_t v, hl, hlen;
@@ -163,7 +165,6 @@ static struct ip_route *ip_route_lookup(ip_addr_t dst) {
     return candidate;
 }
 
-/* NOTE: must not be call after net_run() */
 int ip_route_set_default_gateway(struct ip_iface *iface, const char *gateway) {
     ip_addr_t gw;
 
@@ -188,20 +189,20 @@ struct ip_iface *ip_route_get_iface(ip_addr_t dst) {
 
 struct ip_iface *ip_iface_alloc(const char *unicast, const char *netmask) {
     struct ip_iface *iface;
-
+    /**IPインターフェース分のメモリ確保*/
     iface = (struct ip_iface *)calloc(1, sizeof(*iface));
     if(!iface) {
-        errorf("calloc() failure");
+        errorf("calloc() in ip_iface_alloc() failure");
         return NULL;
     }
     NET_IFACE(iface)->family = NET_IFACE_FAMILY_IP;
     if(ip_addr_pton(unicast, &iface->unicast) == -1) {
-        errorf("ip_addr_pton() failure, addr=%s", unicast);
+        errorf("ip_addr_pton() in ip_iface_alloc() failure, addr=%s", unicast);
         free(iface);
         return NULL;
     }
     if(ip_addr_pton(netmask, &iface->netmask) == -1) {
-        errorf("ip_addr_pton() failure, addr=%s", netmask);
+        errorf("ip_addr_pton() in ip_iface_alloc() failure, addr=%s", netmask);
         free(iface);
         return NULL;
     }
@@ -209,19 +210,19 @@ struct ip_iface *ip_iface_alloc(const char *unicast, const char *netmask) {
     return iface;
 }
 
-/* NOTE: must not be call after net_run() */
+/**IPインターフェースの登録*/
 int ip_iface_register(struct net_device *dev, struct ip_iface *iface) {
     char addr1[IP_ADDR_STR_LEN];
     char addr2[IP_ADDR_STR_LEN];
     char addr3[IP_ADDR_STR_LEN];
 
     if(net_device_add_iface(dev, NET_IFACE(iface)) == -1) {
-        errorf("net_device_add_iface() failure");
+        errorf("net_device_add_iface()  in ip_iface_register() failure");
         return -1;
     }
     if(!ip_route_add(iface->unicast & iface->netmask, iface->netmask,
                      IP_ADDR_ANY, iface)) {
-        errorf("ip_route_add() failure");
+        errorf("ip_route_add() in ip_iface_register() failure");
         return -1;
     }
     iface->next = ifaces;
@@ -249,6 +250,7 @@ int ip_iface_reconfigure(struct ip_iface *iface, ip_addr_t unicast,
     return 0;
 }
 
+/**IPインターフェースの検索*/
 struct ip_iface *ip_iface_select(ip_addr_t addr) {
     struct ip_iface *entry;
 
@@ -258,6 +260,7 @@ struct ip_iface *ip_iface_select(ip_addr_t addr) {
     return entry;
 }
 
+/**プロトコルデータの振り分け*/
 static void ip_input(const uint8_t *data, size_t len, struct net_device *dev) {
     struct ip_hdr *hdr;
     uint8_t v;
@@ -296,11 +299,15 @@ static void ip_input(const uint8_t *data, size_t len, struct net_device *dev) {
         errorf("fragments does not support");
         return;
     }
+
+    /**
+     * @brief IPデータグラムのフィルタリング
+     * @note インターフェースのunicast, ブロードキャストIP(255.255.255.255),
+     * インターフェースが属するサブネットのブロードキャストIPのいずれにも属さなければ他ホスト宛として流す
+     */
     iface = (struct ip_iface *)net_device_get_iface(dev, NET_IFACE_FAMILY_IP);
-    if(!iface) {
-        /* iface is not registered to the device */
-        return;
-    }
+    if(!iface) { return; }
+
     if(hdr->dst != iface->unicast) {
         if(hdr->dst != iface->broadcast && hdr->dst != IP_ADDR_BROADCAST) {
             /* for other host */
@@ -310,9 +317,11 @@ static void ip_input(const uint8_t *data, size_t len, struct net_device *dev) {
     debugf("dev=%s, iface=%s, protocol=%u, total=%u", dev->name,
            ip_addr_ntop(iface->unicast, addr, sizeof(addr)), hdr->protocol,
            total);
-    // ip_dump(data, total);
+
+    /**プロトコルリストを巡回*/
     for(proto = protocols; proto; proto = proto->next) {
         if(proto->type == hdr->protocol) {
+            /**IPヘッダのプロトコル番号と一致するプロトコルの入力関数を呼ぶ*/
             proto->handler((uint8_t *)hdr + hlen, total - hlen, hdr->src,
                            hdr->dst, iface);
             return;
@@ -321,11 +330,13 @@ static void ip_input(const uint8_t *data, size_t len, struct net_device *dev) {
     /* unsupported protocol */
 }
 
+/**デバイスからの送信*/
 static int ip_output_device(struct ip_iface *iface, const uint8_t *data,
                             size_t len, ip_addr_t dst) {
     uint8_t hwaddr[NET_DEVICE_ADDR_LEN] = {};
     int ret;
 
+    /**ARPが必要なデバイスを処理*/
     if(NET_IFACE(iface)->dev->flags & NET_DEVICE_FLAG_NEED_ARP) {
         if(dst == iface->broadcast || dst == IP_ADDR_BROADCAST) {
             memcpy(hwaddr, NET_IFACE(iface)->dev->broadcast,
@@ -339,6 +350,7 @@ static int ip_output_device(struct ip_iface *iface, const uint8_t *data,
                              len, hwaddr);
 }
 
+/**IPデータグラムの生成*/
 static ssize_t ip_output_core(struct ip_iface *iface, uint8_t protocol,
                               const uint8_t *data, size_t len, ip_addr_t src,
                               ip_addr_t dst, ip_addr_t nexthop, uint16_t id,
@@ -365,7 +377,7 @@ static ssize_t ip_output_core(struct ip_iface *iface, uint8_t protocol,
     memcpy(hdr + 1, data, len);
     debugf("dev=%s, iface=%s, protocol=%u, len=%u", NET_IFACE(iface)->dev->name,
            ip_addr_ntop(iface->unicast, addr, sizeof(addr)), protocol, total);
-    // ip_dump(buf, total);
+
     return ip_output_device(iface, buf, total, nexthop);
 }
 
@@ -380,6 +392,7 @@ static uint16_t ip_generate_id(void) {
     return ret;
 }
 
+/**IPの出力*/
 ssize_t ip_output(uint8_t protocol, const uint8_t *data, size_t len,
                   ip_addr_t src, ip_addr_t dst) {
     struct ip_route *route;
@@ -405,12 +418,15 @@ ssize_t ip_output(uint8_t protocol, const uint8_t *data, size_t len,
         return -1;
     }
     nexthop = (route->nexthop != IP_ADDR_ANY) ? route->nexthop : dst;
+    /**MTUを超えていないか*/
     if(NET_IFACE(iface)->dev->mtu < IP_HDR_SIZE_MIN + len) {
         errorf("too long, dev=%s, mtu=%u < %lu", NET_IFACE(iface)->dev->name,
                NET_IFACE(iface)->dev->mtu, IP_HDR_SIZE_MIN + len);
         return -1;
     }
     id = ip_generate_id();
+
+    /**IPデータグラムを生成して出力をtry*/
     if(ip_output_core(iface, protocol, data, len, iface->unicast, dst, nexthop,
                       id, 0) == -1) {
         errorf("ip_output_core() failure");
@@ -419,7 +435,7 @@ ssize_t ip_output(uint8_t protocol, const uint8_t *data, size_t len,
     return len;
 }
 
-/* NOTE: must not be call after net_run() */
+/**プロトコル登録*/
 int ip_protocol_register(uint8_t type,
                          void (*handler)(const uint8_t *data, size_t len,
                                          ip_addr_t src, ip_addr_t dst,
@@ -432,14 +448,17 @@ int ip_protocol_register(uint8_t type,
             return -1;
         }
     }
+    /**サイズ分のメモリ確保*/
     entry = (struct ip_protocol *)calloc(1, sizeof(*entry));
     if(!entry) {
-        errorf("calloc() failure");
+        errorf("calloc() in ip_protocol_register() failure");
         return -1;
     }
+    /**割り当て*/
     entry->type = type;
     entry->handler = handler;
     entry->next = protocols;
+    /**リスト先頭に追加*/
     protocols = entry;
     infof("registered, type=%u", entry->type);
     return 0;
