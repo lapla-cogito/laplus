@@ -24,13 +24,16 @@
 #define IP_IFACE(x) ((struct ip_iface *)(x))
 
 typedef uint32_t ip_addr_t;
+typedef __uint128_t ip_addr_v6_t;
 
+/**IPインターフェース*/
 struct ip_iface {
-    struct net_iface iface;
-    struct ip_iface *next;
-    ip_addr_t unicast;
-    ip_addr_t netmask;
-    ip_addr_t broadcast;
+    struct net_iface iface; /**インターフェース構造体*/
+    struct ip_iface *next; /**次のIPインターフェースへのポインタ*/
+    ip_addr_t unicast; /**ユニキャストアドレス(インターフェースの特定)*/
+    ip_addr_t netmask; /**サブネットマスク(ネットワーク部が先頭から何bit?)*/
+    ip_addr_t
+        broadcast; /**ブロードキャストアドレス(同一リンクに接続された全ホストにパケット送信)*/
 };
 
 extern const ip_addr_t IP_ADDR_ANY;

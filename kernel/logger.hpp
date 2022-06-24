@@ -1,4 +1,8 @@
-//カーネルロガー
+/**
+ * @file logger.hpp
+ *
+ * カーネルロガー
+ */
 #pragma once
 
 enum LogLevel {

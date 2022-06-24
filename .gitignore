@@ -29,3 +29,5 @@
 *.eps
 *.sty
 *.log
+*.tex.tmp
+*.bat

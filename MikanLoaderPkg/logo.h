@@ -1,6 +1,5 @@
 //起動時のロゴ
 #pragma once
-
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
 #include <Uefi.h>

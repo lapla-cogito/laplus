@@ -1,3 +1,8 @@
+/**
+ * @file benri.c
+ *
+ * @brief 便利
+ */
 #include "benri.h"
 #include <ctype.h>
 #include <errno.h>
