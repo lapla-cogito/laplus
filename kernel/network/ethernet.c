@@ -57,8 +57,14 @@ static void ether_dump(const uint8_t *frame, size_t flen) {
 
     hdr = (struct ether_hdr *)frame;
     flockfile(stderr);
-    printk("        src: %s\n", ether_addr_ntop(hdr->src, addr, sizeof(addr)));
-    printk("        dst: %s\n", ether_addr_ntop(hdr->dst, addr, sizeof(addr)));
+    printk("        src: %s\n",
+           ether_addr_ntop(
+               hdr->src, addr,
+               sizeof(addr))); /**ether_addr_ntop()でMACアドレスを文字列に*/
+    printk("        dst: %s\n",
+           ether_addr_ntop(
+               hdr->dst, addr,
+               sizeof(addr))); /**ether_addr_ntop()でMACアドレスを文字列に*/
     printk("       type: 0x%04x\n", ntoh16(hdr->type));
 #ifdef HEXDUMP
     hexdump(stderr, frame, flen);
@@ -75,11 +81,13 @@ int ether_transmit_helper(struct net_device *dev, uint16_t type,
     struct ether_hdr *hdr;
     size_t flen, pad = 0;
 
+    /**ヘッダのフィールド設定*/
     hdr = (struct ether_hdr *)frame;
     memcpy(hdr->dst, dst, ETHER_ADDR_LEN);
     memcpy(hdr->src, dev->addr, ETHER_ADDR_LEN);
     hdr->type = hton16(type);
     memcpy(hdr + 1, data, len);
+    /**サイズが足りない場合にはパディングを挿入する*/
     if(len < ETHER_PAYLOAD_SIZE_MIN) { pad = ETHER_PAYLOAD_SIZE_MIN - len; }
     flen = sizeof(*hdr) + len + pad;
     debugf("dev=%s, type=0x%04x, len=%lu", dev->name, type, flen);
@@ -90,16 +98,18 @@ int ether_input(const uint8_t *data, size_t len, struct net_device *dev) {
     struct ether_hdr *hdr;
     uint16_t type;
 
+    /**読み込んだフレームのサイズがヘッダ長より小さい場合*/
     if(len < (ssize_t)sizeof(*hdr)) {
         errorf("too short");
         return -1;
     }
     hdr = (struct ether_hdr *)data;
-    if(memcmp(dev->addr, hdr->dst, ETHER_ADDR_LEN) != 0) {
-        if(memcmp(ETHER_ADDR_BROADCAST, hdr->dst, ETHER_ADDR_LEN) != 0) {
-            /* for other host */
-            return -1;
-        }
+
+    /**宛先が「自分のMACアドレス or ブロードキャストMACアドレス」でなければ他ホスト宛の通信*/
+    if(memcmp(dev->addr, hdr->dst, ETHER_ADDR_LEN) != 0 &&
+       memcmp(ETHER_ADDR_BROADCAST, hdr->dst, ETHER_ADDR_LEN) != 0) {
+        /* for other host */
+        return -1;
     }
     type = ntoh16(hdr->type);
     debugf("dev=%s, type=0x%04x, len=%lu", dev->name, type, len);

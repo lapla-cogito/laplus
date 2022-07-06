@@ -113,13 +113,14 @@ void icmp_input(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst,
     char addr2[IP_ADDR_STR_LEN];
 
     /**
-     * @brief ICMPメッセージの検証を行う
+     * @brief ICMPメッセージのverifyを行う
      */
-    /**長さ確認*/
+    /**長さの確認*/
     if(len < sizeof(*hdr)) {
-        errorf("too short");
+        errorf("Header is too short");
         return;
     }
+
     hdr = (struct icmp_hdr *)data;
     /**checksum確認*/
     if(cksum16((uint16_t *)data, len, 0) != 0) {
@@ -152,7 +153,7 @@ int icmp_output(uint8_t type, uint8_t code, uint32_t values,
     char addr2[IP_ADDR_STR_LEN];
 
     hdr = (struct icmp_hdr *)buf;
-    /**各フィールド設定*/
+    /**各ヘッダフィールド設定*/
     hdr->type = type;
     hdr->code = code;
     hdr->sum = 0;
@@ -171,7 +172,7 @@ int icmp_output(uint8_t type, uint8_t code, uint32_t values,
 int icmp_init(void) {
     /**ICMPの入力関数をIPに登録*/
     if(ip_protocol_register(IP_PROTOCOL_ICMP, icmp_input) == -1) {
-        errorf("ip_protocol_register() failure");
+        errorf("ip_protocol_register() in icmp_init() failure");
         return -1;
     }
     return 0;
