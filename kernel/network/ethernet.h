@@ -9,7 +9,7 @@ extern "C" {
 #include <stdint.h>
 #include <sys/types.h>
 
-#define ETHER_ADDR_LEN 6
+#define ETHER_ADDR_LEN 6 /**Ethernetアドレス(MACアドレス)の長さ*/
 #define ETHER_ADDR_STR_LEN 18 /* "xx:xx:xx:xx:xx:xx\0" */
 
 #define ETHER_HDR_SIZE 14
