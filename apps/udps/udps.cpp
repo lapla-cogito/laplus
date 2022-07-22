@@ -38,14 +38,15 @@ extern "C" int main(int argc, char *argv[]) {
         peern = sizeof(peer);
         ret = recvfrom(soc, buf, sizeof(buf), (struct sockaddr *)&peer, &peern);
         if(ret <= 0) {
-            printf("EOF\n");
+            printf("<EOF>\n");
             break;
         }
 
-        addr=(unsigned char *)&peer.sin_addr;
-        printf("recvfrom success: %d bytes data received, peer=%d.%d.%d.%d:%d",ret,addr[0],addr[1],addr[2],addr[3],ntoh(peer.sin_port));
+        addr = (unsigned char *)&peer.sin_addr;
+        printf("recvfrom success: %d bytes data received, peer=%d.%d.%d.%d:%d",
+               ret, addr[0], addr[1], addr[2], addr[3], ntoh(peer.sin_port));
 
-        sendto(soc,buf,ret,(struct sockaddr *)&peer,peern);
+        sendto(soc, buf, ret, (struct sockaddr *)&peer, peern);
     }
 
     close(soc);
