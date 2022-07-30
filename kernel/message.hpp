@@ -4,7 +4,6 @@ enum class LayerOperation { Move, MoveRelative, Draw, DrawArea };
 struct Message {
     enum Type {
         kInterruptXHCI,
-        kInterruptE1000,
         kTimerTimeout,
         kKeyPush,
         kLayer,
