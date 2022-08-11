@@ -31,3 +31,11 @@
 *.log
 *.tex.tmp
 *.bat
+*.aux
+*.dvi
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.toc
+*.blg
+*.bbl
