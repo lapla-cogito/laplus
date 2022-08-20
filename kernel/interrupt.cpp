@@ -1,7 +1,7 @@
 /**
  * @file interrupt.cpp
  *
- * @brief 割り込み処理
+ * @brief 割り込み処理が定義されたファイル
  */
 #include "interrupt.hpp"
 #include "asmfunc.h"
@@ -122,6 +122,7 @@ void InitializeInterrupt() {
                 MakeIDTAttr(DescriptorType::kInterruptGate, 0 /* DPL */,
                             true /* present */, kISTForTimer /* IST */),
                 reinterpret_cast<uint64_t>(IntHandlerLAPICTimer), kKernelCS);
+    set_idt_entry(InterruptVector::kE1000, IntHandlerE1000);
     set_idt_entry(0, IntHandlerDE);
     set_idt_entry(1, IntHandlerDB);
     set_idt_entry(3, IntHandlerBP);
