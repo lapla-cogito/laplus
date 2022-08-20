@@ -5,7 +5,7 @@
 #include "keyboard.hpp"
 #include "logger.hpp"
 #include "msr.hpp"
-#include "net/socket.h"
+#include "network/socket.h"
 #include "task.hpp"
 #include "terminal.hpp"
 #include "timer.hpp"
