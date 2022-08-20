@@ -5,6 +5,7 @@
 #include "keyboard.hpp"
 #include "logger.hpp"
 #include "msr.hpp"
+#include "net/socket.h"
 #include "task.hpp"
 #include "terminal.hpp"
 #include "timer.hpp"
@@ -368,13 +369,80 @@ SYSCALL(MapFile) {
     return {vaddr_begin, 0};
 }
 
+SYSCALL(SocketOpen) {
+    uint64_t ret = socketopen((int)arg1, (int)arg2, (int)arg3);
+    return {ret, 0};
+}
+
+SYSCALL(SocketClose) {
+    struct socket *s = socketget((int)arg1);
+    uint64_t ret = socketclose(s);
+    return {ret, 0};
+}
+
+SYSCALL(SocketIOCTL) {
+    struct socket soc = {0, (int)arg1};
+    uint64_t ret = socketioctl(&soc, (int)arg2, (void *)arg3);
+    return {ret, 0};
+}
+
+SYSCALL(SocketRecvFrom) {
+    struct socket *s = socketget((int)arg1);
+    uint64_t ret = socketrecvfrom(s, (char *)arg2, (int)arg3,
+                                  (struct sockaddr *)arg4, (int *)arg5);
+    return {ret, 0};
+}
+
+SYSCALL(SocketSendTo) {
+    struct socket *s = socketget((int)arg1);
+    uint64_t ret = socketsendto(s, (char *)arg2, (int)arg3,
+                                (struct sockaddr *)arg4, (int)arg5);
+    return {ret, 0};
+}
+
+SYSCALL(SocketBind) {
+    struct socket *s = socketget((int)arg1);
+    uint64_t ret = socketbind(s, (struct sockaddr *)arg2, (int)arg3);
+    return {ret, 0};
+}
+
+SYSCALL(SocketListen) {
+    struct socket *s = socketget((int)arg1);
+    uint64_t ret = socketlisten(s, (int)arg2);
+    return {ret, 0};
+}
+
+SYSCALL(SocketAccept) {
+    struct socket *s = socketget((int)arg1);
+    uint64_t ret = socketaccept(s, (struct sockaddr *)arg2, (int *)arg3);
+    return {ret, 0};
+}
+
+SYSCALL(SocketConnect) {
+    struct socket *s = socketget((int)arg1);
+    uint64_t ret = socketconnect(s, (struct sockaddr *)arg2, (int)arg3);
+    return {ret, 0};
+}
+
+SYSCALL(SocketRecv) {
+    struct socket *s = socketget((int)arg1);
+    uint64_t ret = socketrecv(s, (char *)arg2, (int)arg3);
+    return {ret, 0};
+}
+
+SYSCALL(SocketSend) {
+    struct socket *s = socketget((int)arg1);
+    uint64_t ret = socketsend(s, (char *)arg2, (int)arg3);
+    return {ret, 0};
+}
+
 #undef SYSCALL
 
 } // namespace syscall
 
 using SyscallFuncType = syscall::Result(uint64_t, uint64_t, uint64_t, uint64_t,
                                         uint64_t, uint64_t);
-extern "C" std::array<SyscallFuncType *, 0x10> syscall_table{
+extern "C" std::array<SyscallFuncType *, 0x1b> syscall_table{
     /* 0x00 */ syscall::LogString,
     /* 0x01 */ syscall::PutString,
     /* 0x02 */ syscall::Exit,
@@ -391,6 +459,17 @@ extern "C" std::array<SyscallFuncType *, 0x10> syscall_table{
     /* 0x0d */ syscall::ReadFile,
     /* 0x0e */ syscall::DemandPages,
     /* 0x0f */ syscall::MapFile,
+    /* 0x10 */ syscall::SocketOpen,
+    /* 0x11 */ syscall::SocketClose,
+    /* 0x12 */ syscall::SocketIOCTL,
+    /* 0x13 */ syscall::SocketRecvFrom,
+    /* 0x14 */ syscall::SocketSendTo,
+    /* 0x15 */ syscall::SocketBind,
+    /* 0x16 */ syscall::SocketListen,
+    /* 0x17 */ syscall::SocketAccept,
+    /* 0x18 */ syscall::SocketConnect,
+    /* 0x19 */ syscall::SocketRecv,
+    /* 0x1a */ syscall::SocketSend,
 };
 
 void InitializeSyscall() {
