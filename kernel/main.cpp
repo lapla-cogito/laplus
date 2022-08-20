@@ -19,7 +19,7 @@
 #include "message.hpp"
 #include "mouse.hpp"
 #include "network/network.h"
-#include "network/nic/e1000.hpp"
+#include "network/nic/e1000.h"
 #include "network/port/connectOS.hpp"
 #include "paging.hpp"
 #include "pci.hpp"
