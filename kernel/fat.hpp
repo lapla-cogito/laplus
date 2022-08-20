@@ -1,6 +1,6 @@
 /**
  * @file fat.hpp
- * 
+ *
  * @brief FATファイルシステムを操作するためのプログラムを集めたファイル
  */
 #pragma once
