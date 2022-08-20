@@ -1,4 +1,5 @@
 -I/home/lapla/osbook/devenv/x86_64-elf/include/c++/v1
+-I/home/lapla/osbook/devenv/x86_64-elf/include/freetype2
 -I/home/lapla/osbook/devenv/x86_64-elf/include
 -nostdlibinc
 -D__ELF__
