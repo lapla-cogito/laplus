@@ -3,42 +3,44 @@
  *
  * @brief カーネル本体が記述されたファイル
  */
-#include "acpi.hpp"
-#include "asmfunc.h"
-#include "console.hpp"
-#include "fat.hpp"
-#include "font.hpp"
-#include "frame_buffer_config.hpp"
-#include "graphics.hpp"
-#include "interrupt.hpp"
-#include "keyboard.hpp"
-#include "layer.hpp"
-#include "logger.hpp"
-#include "memory_manager.hpp"
-#include "memory_map.hpp"
-#include "message.hpp"
-#include "mouse.hpp"
-#include "network/network.h"
-#include "network/nic/e1000.h"
-#include "network/port/connectOS.hpp"
-#include "paging.hpp"
-#include "pci.hpp"
-#include "segment.hpp"
-#include "syscall.hpp"
-#include "task.hpp"
-#include "terminal.hpp"
-#include "timer.hpp"
-#include "uefi.hpp"
-#include "usb/xhci/xhci.hpp"
-#include "window.hpp"
-#include <algorithm>
-#include <cstddef>
 #include <cstdint>
+#include <cstddef>
 #include <cstdio>
+
 #include <deque>
 #include <limits>
 #include <numeric>
 #include <vector>
+
+#include "frame_buffer_config.hpp"
+#include "memory_map.hpp"
+#include "graphics.hpp"
+#include "mouse.hpp"
+#include "font.hpp"
+#include "console.hpp"
+#include "pci.hpp"
+#include "logger.hpp"
+#include "usb/xhci/xhci.hpp"
+#include "interrupt.hpp"
+#include "asmfunc.h"
+#include "segment.hpp"
+#include "paging.hpp"
+#include "memory_manager.hpp"
+#include "window.hpp"
+#include "layer.hpp"
+#include "message.hpp"
+#include "timer.hpp"
+#include "acpi.hpp"
+#include "keyboard.hpp"
+#include "task.hpp"
+#include "terminal.hpp"
+#include "fat.hpp"
+#include "syscall.hpp"
+#include "uefi.hpp"
+
+#include "network/network.h"
+#include "network/port/connectOS.hpp"
+#include "network/nic/e1000.h"
 
 __attribute__((format(printf, 1, 2))) int printk(const char *format, ...) {
     va_list ap;
