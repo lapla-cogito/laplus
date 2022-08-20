@@ -2,6 +2,7 @@
 
 enum class LayerOperation { Move, MoveRelative, Draw, DrawArea };
 struct Message {
+    /**メッセージ識別子*/
     enum Type {
         kInterruptXHCI,
         kTimerTimeout,
@@ -13,12 +14,14 @@ struct Message {
         kWindowActive,
         kPipe,
         kWindowClose,
-        kInterruptE1000
+        kInterruptE1000,
+        kNetInput,
     } type;
 
     uint64_t src_task;
 
     union {
+        /**タイマー*/
         struct {
             unsigned long timeout;
             int value;
@@ -44,6 +47,7 @@ struct Message {
             uint8_t buttons;
         } mouse_move;
 
+        /**マウスボタン*/
         struct {
             int x, y;
             int press; // 1: press, 0: release
@@ -59,6 +63,7 @@ struct Message {
             uint8_t len;
         } pipe;
 
+        /**layer_idでウィンドウを閉じる*/
         struct {
             unsigned int layer_id;
         } window_close;

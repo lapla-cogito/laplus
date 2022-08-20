@@ -18,6 +18,9 @@
 #include "memory_map.hpp"
 #include "message.hpp"
 #include "mouse.hpp"
+#include "net/driver/e1000.h"
+#include "net/net.h"
+#include "net/port/mikanos.hpp"
 #include "network/network.h"
 #include "paging.hpp"
 #include "pci.hpp"
@@ -89,6 +92,7 @@ void InitializeTextWindow() {
 
 int text_window_index;
 
+/**シェルのカーソル描画*/
 void DrawTextCursor(bool visible) {
     const auto color = visible ? ToColor(0) : ToColor(0xffffff);
     const auto pos = Vector2D<int>{4 + 8 * text_window_index, 5};
@@ -119,7 +123,7 @@ void InputTextWindow(char c) {
 
 alignas(16) uint8_t kernel_main_stack[1024 * 1024];
 
-//タスクバー右端に現在時刻を表示する
+/**タスクバー右端に現在時刻を表示する*/
 void TaskWallclock(uint64_t task_id, int64_t data) {
     __asm__("cli");
     Task &task = task_manager->CurrentTask();
@@ -160,7 +164,7 @@ void TaskWallclock(uint64_t task_id, int64_t data) {
     draw_current_time();
     timer_manager->AddTimer(Timer{timer_manager->CurrentTick(), 1, task_id});
 
-    while(true) {
+    while(1) {
         __asm__("cli");
         auto msg = task.ReceiveMessage();
         if(!msg) {
@@ -216,6 +220,10 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     timer_manager->AddTimer(Timer{kTimer05Sec, kTextboxCursorTimer, 1});
     bool textbox_cursor_visible = false;
 
+    const int kNetTimer = 2;
+    const int kTimer01sec = static_cast<int>(kTimerFreq * 0.1);
+    timer_manager->AddTimer(Timer{kTimer01sec, kNetTimer, 1});
+
     InitializeSyscall();
 
     InitializeTask();
@@ -226,6 +234,8 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     InitializeMouse();
 
     net_init();
+    e1000_probe();
+    net_run();
 
     app_loads = new std::map<fat::DirectoryEntry *, AppLoadInfo>;
     task_manager->NewTask().InitContext(TaskTerminal, 0).Wakeup();
@@ -269,6 +279,12 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
                 textbox_cursor_visible = !textbox_cursor_visible;
                 DrawTextCursor(textbox_cursor_visible);
                 layer_manager->Draw(text_window_layer_id);
+            } else if(msg->arg.timer.value == kNetTimer) {
+                __asm__("cli");
+                timer_manager->AddTimer(
+                    Timer{msg->arg.timer.timeout + kTimer01sec, kNetTimer, 1});
+                __asm__("sti");
+                net_timer_handler();
             }
             break;
 
@@ -279,9 +295,10 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
                 if(msg->arg.keyboard.press) {
                     InputTextWindow(msg->arg.keyboard.ascii);
                 }
-            } else if(msg->arg.keyboard.press &&
-                      msg->arg.keyboard.keycode ==
-                          59 /* F2 */) { // F2が押されたらターミナル生成
+            } else if(
+                msg->arg.keyboard.press &&
+                msg->arg.keyboard.keycode ==
+                    59 /* F2のキーコード */) { /**F2が押されたら新たなターミナル生成*/
                 task_manager->NewTask().InitContext(TaskTerminal, 0).Wakeup();
             } else {
                 __asm__("cli");
@@ -304,6 +321,14 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
                                       Message{Message::kLayerFinish});
             __asm__("sti");
             break;
+        case Message::kInterruptE1000:
+            e1000_intr();
+            break;
+        case Message::kNetInput:
+            __asm__("cli");
+            net_softirq_handler();
+            __asm__("sti");
+            break;
         default:
             Log(kError, "Unknown message type: %d\n", msg->type);
         }
@@ -311,5 +336,5 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
 }
 
 extern "C" void __cxa_pure_virtual() {
-    while(1) __asm__("hlt");
+    while(1) { __asm__("hlt"); }
 }
