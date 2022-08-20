@@ -2,13 +2,13 @@ TARGET = kernel.elf
 OBJS = main.o graphics.o mouse.o font.o hankaku.o newlib_support.o console.o \
        pci.o asmfunc.o libcxx_support.o logger.o interrupt.o segment.o paging.o memory_manager.o \
        window.o layer.o timer.o frame_buffer.o acpi.o keyboard.o task.o terminal.o \
-       fat.o syscall.o file.o appsyscall.o \
+       fat.o syscall.o file.o \
        usb/memory.o usb/device.o usb/xhci/ring.o usb/xhci/trb.o usb/xhci/xhci.o \
        usb/xhci/port.o usb/xhci/device.o usb/xhci/devmgr.o usb/xhci/registers.o \
        usb/classdriver/base.o usb/classdriver/hid.o usb/classdriver/keyboard.o \
-       usb/classdriver/mouse.o usb/classdriver/cdc.o \
-	   network/benri.o network/network.o network/port/connectOS.o network/nic/e1000.o \
-	   network/ethernet.o network/arp.o network/ip.o network/icmp.o
+       usb/classdriver/mouse.o \
+       net/util.o net/net.o net/port/mikanos.o net/driver/e1000.o net/ether.o \
+       net/arp.o net/ip.o net/icmp.o net/socket.o net/udp.o net/tcp.o
 DEPENDS = $(join $(dir $(OBJS)),$(addprefix .,$(notdir $(OBJS:.o=.d))))
 
 CPPFLAGS += -I.
@@ -23,7 +23,7 @@ all: $(TARGET)
 
 .PHONY: clean
 clean:
-	rm -rf *.o
+	rm -rf $(OBJS)
 
 kernel.elf: $(OBJS) Makefile
 	ld.lld $(LDFLAGS) -o kernel.elf $(OBJS) -lc -lc++ -lc++abi -lm \
