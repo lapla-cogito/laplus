@@ -4,8 +4,8 @@
 #undef NULL
 #endif
 
-#include <Library/UefiRuntimeServicesTableLib.h>
 #include <Uefi.h>
+#include <Library/UefiRuntimeServicesTableLib.h>
 
 #undef NULL
 #include <cstddef>
