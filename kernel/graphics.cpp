@@ -142,21 +142,21 @@ std::pair<size_t, int> OpenFile(const char *filepath, int flag) {
 }
 
 std::tuple<int, uint8_t *, size_t> MapFile(const char *filepath) {
-    SyscallResult res = OpenFile(filepath, O_RDONLY);
-    if(res.error) {
-        fprintf(stderr, "%s: %s\n", strerror(res.error), filepath);
+    // OpenFileはsize_tとerrのintのpairが返ってくる
+    const auto [fd, err_of] = OpenFile(filepath, O_RDONLY);
+    if(err_of) {
+        fprintf(stderr, "%s: %s\n", strerror(err_of), filepath);
         exit(1);
     }
 
-    const int fd = res.value;
     size_t filesize;
-    res = MakeMapFile(fd, &filesize, 0);
-    if(res.error) {
-        fprintf(stderr, "%s\n", strerror(res.error));
+    const auto [vaddr, err_mm] = MakeMapFile(fd, &filesize, 0);
+    if(err_mm) {
+        fprintf(stderr, "%s\n", strerror(err_mm));
         exit(1);
     }
 
-    return {fd, reinterpret_cast<uint8_t *>(res.value), filesize};
+    return {fd, reinterpret_cast<uint8_t *>(vaddr), filesize};
 }
 
 uint32_t GetColorGray(unsigned char *image_data) {
@@ -178,7 +178,9 @@ void DrawDesktop(PixelWriter &writer) {
 
     unsigned char *image_data = stbi_load_from_memory(
         content, filesize, &imgwidth, &imgheight, &bytes_per_pixel, 0);
-    // wallpaper.pngを読み込めなかったらデフォのfillrect
+
+    int fd = ReadFile(wallpath);
+    // wallpaper.pngを読み込めなかったらデフォのfillrectをする
     if(image_data == nullptr) {
         fprintf(stderr, "Failed to load image: %s\n", stbi_failure_reason());
         FillRectangle(writer, {0, 0}, {width, height - 50}, kDesktopBGColor);
@@ -196,8 +198,10 @@ void DrawDesktop(PixelWriter &writer) {
     }
     //壁紙描画終了
 
+    //タスクバーら辺
     FillRectangle(writer, {0, height - 50}, {width, 50}, {1, 8, 17});
     FillRectangle(writer, {0, height - 50}, {width / 5, 50}, {80, 80, 80});
+    //左下のマーク
     DrawRectangle(writer, {10, height - 40}, {30, 30}, {160, 160, 160});
 }
 
