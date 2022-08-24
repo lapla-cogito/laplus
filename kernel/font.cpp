@@ -164,15 +164,15 @@ void InitializeFont() {
         exit(1);
     }
 
-    auto [entry, pos_slash] = fat::FindFile("/nihongo.ttf");
-    if(entry == nullptr || pos_slash) {
-        Log(kWarn, "No nihongo.ttf\n");
+    auto [entry_ja, pos_slash_ja] = fat::FindFile("/nihongo.ttf");
+    if(entry_ja == nullptr || pos_slash_ja) {
+        Log(kWarn, "Couldn't find nihongo.ttf\n");
         return;
     }
 
-    const size_t size = entry->file_size;
-    nihongo_buf = new std::vector<uint8_t>(size);
-    if(LoadFile(nihongo_buf->data(), size, *entry) != size) {
+    const size_t size_ja = entry_ja->file_size;
+    nihongo_buf = new std::vector<uint8_t>(size_ja);
+    if(LoadFile(nihongo_buf->data(), size_ja, *entry_ja) != size_ja) {
         delete nihongo_buf;
         Log(kError, "Failed to load nihongo.ttf");
         exit(1);
@@ -183,15 +183,15 @@ void InitializeFont() {
         exit(1);
     }
 
-    auto [entry, pos_slash] = fat::FindFile("/chinese.ttf");
-    if(entry == nullptr || pos_slash) {
-        Log(kWarn, "No chinese.ttf\n");
+    auto [entry_chi, pos_slash_chi] = fat::FindFile("/chinese.ttf");
+    if(entry_chi == nullptr || pos_slash_chi) {
+        Log(kWarn, "Couldn't find chinese.ttf\n");
         return;
     }
 
-    const size_t size = entry->file_size;
-    chinese_buf = new std::vector<uint8_t>(size);
-    if(LoadFile(chinese_buf->data(), size, *entry) != size) {
+    const size_t size_chi = entry_chi->file_size;
+    chinese_buf = new std::vector<uint8_t>(size_chi);
+    if(LoadFile(chinese_buf->data(), size_chi, *entry_chi) != size_chi) {
         delete chinese_buf;
         Log(kError, "Failed to load chinese.ttf");
         exit(1);
