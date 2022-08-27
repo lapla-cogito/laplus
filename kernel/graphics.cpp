@@ -179,7 +179,6 @@ void DrawDesktop(PixelWriter &writer) {
     unsigned char *image_data = stbi_load_from_memory(
         content, filesize, &imgwidth, &imgheight, &bytes_per_pixel, 0);
 
-    int fd = ReadFile(wallpath);
     // wallpaper.pngを読み込めなかったらデフォのfillrectをする
     if(image_data == nullptr) {
         fprintf(stderr, "Failed to load image: %s\n", stbi_failure_reason());
