@@ -24,7 +24,7 @@ const uint8_t *GetFont(char c) {
 }
 
 FT_Library ft_library;
-std::vector<uint8_t> *nihongo_buf;
+std::vector<uint8_t> *nihongo_buf, *chinese_buf;
 
 Error RenderUnicode(char32_t c, FT_Face face) {
     const auto glyph_index = FT_Get_Char_Index(face, c);
