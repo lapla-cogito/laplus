@@ -21,7 +21,7 @@
 struct net_protocol {
     struct net_protocol *next; /**次のプロトコルへのポインタ*/
     uint16_t type;             /**プロトコルタイプ*/
-    mutex_t mutex;             /* mutex for input queue */
+    mutex_t mutex;             /**mutex for input queue*/
     struct queue_head queue;   /**受信キュー*/
     void (*handler)(const uint8_t *data, size_t len,
                     struct net_device *dev); /**プロトコル入力関数へのポインタ*/
