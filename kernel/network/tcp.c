@@ -678,7 +678,7 @@ static void tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags,
                 pcb->snd.wl2 = seg->ack;
             }
         } else if(seg->ack < pcb->snd.una) {
-            /* ignore */
+            /* pass */
         } else if(seg->ack > pcb->snd.nxt) {
             tcp_output(pcb, TCP_FLG_ACK, NULL, 0);
             return;
@@ -689,11 +689,8 @@ static void tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags,
                 pcb->state = TCP_PCB_STATE_FIN_WAIT2;
             }
             break;
-        case TCP_PCB_STATE_FIN_WAIT2:
-            /* do not delete the TCB */
-            break;
-        case TCP_PCB_STATE_CLOSE_WAIT:
-            /* do nothing */
+        case TCP_PCB_STATE_FIN_WAIT2:  /* do not delete the TCB */
+        case TCP_PCB_STATE_CLOSE_WAIT: /* do nothing */
             break;
         case TCP_PCB_STATE_CLOSING:
             if(seg->ack == pcb->snd.nxt) {
@@ -775,17 +772,11 @@ static void tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags,
             pcb->state = TCP_PCB_STATE_TIME_WAIT;
             tcp_set_timewait_timer(pcb);
             break;
-        case TCP_PCB_STATE_CLOSE_WAIT:
-            /* Remain in the CLOSE-WAIT state */
+        case TCP_PCB_STATE_CLOSE_WAIT: /* Remain in the CLOSE-WAIT state */
+        case TCP_PCB_STATE_CLOSING:    /* Remain in the CLOSING state */
+        case TCP_PCB_STATE_LAST_ACK:   /* Remain in the LAST-ACK state */
             break;
-        case TCP_PCB_STATE_CLOSING:
-            /* Remain in the CLOSING state */
-            break;
-        case TCP_PCB_STATE_LAST_ACK:
-            /* Remain in the LAST-ACK state */
-            break;
-        case TCP_PCB_STATE_TIME_WAIT:
-            /* Remain in the TIME-WAIT state */
+        case TCP_PCB_STATE_TIME_WAIT:    /* Remain in the TIME-WAIT state */
             tcp_set_timewait_timer(pcb); /* restart time-wait timer */
             break;
         }
@@ -862,7 +853,7 @@ static void tcp_timer(void) {
 
     mutex_lock(&mutex);
     gettimeofday(&now, NULL);
-    for(pcb = pcbs; pcb < tailof(pcbs); pcb++) {
+    for(pcb = pcbs; pcb < tailof(pcbs); ++pcb) {
         if(pcb->state == TCP_PCB_STATE_FREE) { continue; }
         if(pcb->state == TCP_PCB_STATE_TIME_WAIT) {
             if(timercmp(&now, &pcb->tw_timer, >) != 0) {
@@ -1010,8 +1001,7 @@ int tcp_connect(int id, struct tcp_endpoint *foreign) {
     struct tcp_endpoint local;
     struct ip_iface *iface;
     char addr[IP_ADDR_STR_LEN];
-    int p;
-    int state;
+    int p, state;
 
     mutex_lock(&mutex);
     pcb = tcp_pcb_get(id);
@@ -1238,7 +1228,7 @@ RETRY:
     case TCP_PCB_STATE_CLOSING:
     case TCP_PCB_STATE_LAST_ACK:
     case TCP_PCB_STATE_TIME_WAIT:
-        errorf("connection closing");
+        errorf("connection closing...");
         mutex_unlock(&mutex);
         return -1;
     default:
