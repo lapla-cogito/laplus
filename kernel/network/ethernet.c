@@ -81,13 +81,13 @@ int ether_transmit_helper(struct net_device *dev, uint16_t type,
     struct ether_hdr *hdr;
     size_t flen, pad = 0;
 
-    /**ヘッダのフィールド設定*/
+    /**config fields of the header*/
     hdr = (struct ether_hdr *)frame;
     memcpy(hdr->dst, dst, ETHER_ADDR_LEN);
     memcpy(hdr->src, dev->addr, ETHER_ADDR_LEN);
     hdr->type = hton16(type);
     memcpy(hdr + 1, data, len);
-    /**サイズが足りない場合にはパディングを挿入する*/
+    /**insert padding when the size is short*/
     if(len < ETHER_PAYLOAD_SIZE_MIN) { pad = ETHER_PAYLOAD_SIZE_MIN - len; }
     flen = sizeof(*hdr) + len + pad;
     debugf("dev=%s, type=0x%04x, len=%lu", dev->name, type, flen);

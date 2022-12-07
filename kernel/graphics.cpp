@@ -164,22 +164,26 @@ uint32_t GetColorGray(unsigned char *image_data) {
     return gray << 16 | gray << 8 | gray;
 }
 
-//デスクトップ描画
+/**デスクトップ左下のロゴ描画*/
+void DrawLogo() {
+    DrawRectangle(writer, {10, height - 40}, {30, 30}, {160, 160, 160});
+}
+
+// デスクトップ描画
 void DrawDesktop(PixelWriter &writer) {
     const auto width = writer.Width();
     const auto height = writer.Height();
-    FillRectangle(writer, {0, 0}, {width, height - 50}, kDesktopBGColor);
 
-    //壁紙描画
+    // 壁紙描画
     int imgwidth, imgheight, bytes_per_pixel;
-    char wallpath[] = "wallpaper.png";
+    char wallpath[] = "./resource/wallpaper.png";
     const char *filepath = wallpath;
     const auto [fd, content, filesize] = MapFile(filepath);
 
     unsigned char *image_data = stbi_load_from_memory(
         content, filesize, &imgwidth, &imgheight, &bytes_per_pixel, 0);
 
-    // wallpaper.pngを読み込めなかったらデフォのfillrectをする
+    // wallpaper.pngを読み込めなかったらデフォのfillrectをする(単色)
     if(image_data == nullptr) {
         fprintf(stderr, "Failed to load image: %s\n", stbi_failure_reason());
         FillRectangle(writer, {0, 0}, {width, height - 50}, kDesktopBGColor);
@@ -191,7 +195,7 @@ void DrawDesktop(PixelWriter &writer) {
             for(int x = 0; x < imgwidth; ++x) {
                 uint32_t c = get_color(
                     &image_data[bytes_per_pixel * (y * imgwidth + x)]);
-                FillRectangle(writer, {x - 1, y - 1}, {x, y}, ToColor(c));
+                FillRectangle(writer, {x, y}, {x + 1, y + 1}, ToColor(c));
             }
         }
     }
@@ -201,7 +205,7 @@ void DrawDesktop(PixelWriter &writer) {
     FillRectangle(writer, {0, height - 50}, {width, 50}, {1, 8, 17});
     FillRectangle(writer, {0, height - 50}, {width / 5, 50}, {80, 80, 80});
     //左下のマーク
-    DrawRectangle(writer, {10, height - 40}, {30, 30}, {160, 160, 160});
+    DrawLogo();
 }
 
 FrameBufferConfig screen_config;

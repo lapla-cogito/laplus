@@ -31,7 +31,7 @@ struct ip_hdr {
 
 /**IPv6のヘッダ*/
 struct ip_hdr_v6 {
-    uint8_t vhl;
+    uint8_t vhl;    /**バージョンとヘッダ長*/
     uint16_t total; /**ペイロード長*/
     uint8_t
         nex_hdr; /**次のヘッダ(拡張ヘッダがある場合,そのプロトコル番号が入る)*/
@@ -43,7 +43,7 @@ struct ip_hdr_v6 {
 /**プロトコル構造体*/
 struct ip_protocol {
     struct ip_protocol *next; /**次のプロトコルを指すポインタ*/
-    uint8_t type;             /**タイプ*/
+    uint8_t type;             /**プロトコルの種別*/
     void (*handler)(const uint8_t *data, size_t len, ip_addr_t src,
                     ip_addr_t dst, struct ip_iface *iface);
 };

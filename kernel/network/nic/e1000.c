@@ -91,14 +91,14 @@ static void e1000_rx_init(struct e1000 *adapter) {
     e1000_reg_write(adapter, E1000_RDT, RX_RING_SIZE - 1);
     // set tx control register
     e1000_reg_write(adapter, E1000_RCTL,
-                    (E1000_RCTL_SBP |        /* store bad packet */
-                     E1000_RCTL_UPE |        /* unicast promiscuous enable */
-                     E1000_RCTL_MPE |        /* multicast promiscuous enable */
-                     E1000_RCTL_RDMTS_HALF | /* rx desc min threshold size */
-                     E1000_RCTL_SECRC |      /* Strip Ethernet CRC */
-                     E1000_RCTL_LPE |        /* long packet enable */
-                     E1000_RCTL_BAM |        /* broadcast enable */
-                     E1000_RCTL_SZ_2048 |    /* rx buffer size 2048 */
+                    (E1000_RCTL_SBP |        /** store bad packet */
+                     E1000_RCTL_UPE |        /** unicast promiscuous enable */
+                     E1000_RCTL_MPE |        /** multicast promiscuous enable */
+                     E1000_RCTL_RDMTS_HALF | /** rx desc min threshold size */
+                     E1000_RCTL_SECRC |      /** Strip Ethernet CRC */
+                     E1000_RCTL_LPE |        /** long packet enable */
+                     E1000_RCTL_BAM |        /** broadcast enable */
+                     E1000_RCTL_SZ_2048 |    /** rx buffer size 2048 */
                      0));
 }
 
@@ -135,9 +135,8 @@ static ssize_t e1000_write(struct net_device *dev, const uint8_t *data,
     desc->cmd = (E1000_TXD_CMD_EOP | E1000_TXD_CMD_RS);
     debugf("%s: %u bytes data transmit", adapter->dev->name, desc->length);
     e1000_reg_write(adapter, E1000_TDT, (tail + 1) % TX_RING_SIZE);
-    while(!(desc->status & 0x0f)) {
-        // busy wait
-    }
+    while(!(desc->status & 0x0f))
+        ; // busy wait
     return len;
 }
 
@@ -158,6 +157,7 @@ static void e1000_receive(struct e1000 *adapter) {
             e1000_reg_write(adapter, E1000_IMS, E1000_IMS_RXT0);
             break;
         }
+
         do {
             if(desc->length < 60) {
                 errorf("%s: short packet (%d bytes)", adapter->dev->name,
@@ -206,6 +206,7 @@ static struct e1000 *e1000_alloc(uintptr_t mmio_base) {
         errorf("calloc() failure");
         return NULL;
     }
+
     adapter->mmio_base = mmio_base;
     v1 = e1000_reg_read(adapter, 0x5400);
     v2 = e1000_reg_read(adapter, 0x5404);
@@ -219,7 +220,7 @@ static struct e1000 *e1000_alloc(uintptr_t mmio_base) {
            adapter->mmio_base, adapter->addr[0], adapter->addr[1],
            adapter->addr[2], adapter->addr[3], adapter->addr[4],
            adapter->addr[5]);
-    for(int n = 0; n < 128; n++) {
+    for(int n = 0; n < 128; ++n) {
         e1000_reg_write(adapter, E1000_MTA + (n << 2), 0);
     }
     e1000_rx_init(adapter);

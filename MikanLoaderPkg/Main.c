@@ -21,6 +21,7 @@ void Halt(void) {
     while(1) __asm__("hlt");
 }
 
+/**指定ミリ秒待機*/
 void Stall(UINTN n) { gBS->Stall(n); }
 
 EFI_STATUS GetMemoryMap(struct MemoryMap *map) {
@@ -71,6 +72,7 @@ const CHAR16 *GetMemoryTypeUnicode(EFI_MEMORY_TYPE type) {
     }
 }
 
+/**INFOとERRORを文字色変えて表示*/
 EFIAPI EFI_STATUS PrintInfo(UINTN level, const CHAR16 *Format, ...) {
     VA_LIST args;
     EFI_STATUS status;
@@ -190,7 +192,7 @@ const CHAR16 *GetPixelFormatUnicode(EFI_GRAPHICS_PIXEL_FORMAT fmt) {
     }
 }
 
-/**入力待機*/
+/**任意の入力があるまで待機*/
 EFI_STATUS WaitForPressAnyKey() {
     EFI_STATUS status;
 
@@ -325,7 +327,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE image_handle,
                   gop->Mode->Info->VerticalResolution);
     }
 
-    //�ύX�ł��邩�͋@��ɂ��̂łł��Ȃ��ꍇ�͂��̎|�\��
+    /**画面解像度を変更する*/
     status = gop->SetMode(gop, vga_mode);
     if(EFI_ERROR(status)) {
         PrintInfo(ERROR, L"Failed to change resolution: %r\n", status);
@@ -335,6 +337,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE image_handle,
     Print(L"\nHello, World!\nThis is laplus OS!\n\n");
 
     Print(L"Booting laplus OS.");
+    /**インチキbooting画面*/
     for(int i = 0; i < 5; ++i) {
         Stall(1000000);
         Print(L".");
@@ -515,7 +518,6 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE image_handle,
     Print(L"All done!\n");
     Stall(1000000);
 
-    while(1)
-        ;
+    while(1) {}
     return EFI_SUCCESS;
 }

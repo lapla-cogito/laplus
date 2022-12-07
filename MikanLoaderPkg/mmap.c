@@ -65,7 +65,7 @@ EFI_STATUS SaveMemoryMap(struct MemoryMap *map, EFI_FILE_PROTOCOL *file) {
     int idx;
     for(iter = (EFI_PHYSICAL_ADDRESS)map->buffer, idx = 0;
         iter < (EFI_PHYSICAL_ADDRESS)map->buffer + map->map_size;
-        iter += map->descriptor_size, idx++) {
+        iter += map->descriptor_size, ++idx) {
         EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)iter;
         len = AsciiSPrint(buf, sizeof(buf), "%u, %x, %-ls, %08lx, %lx, %lx\n",
                           idx, desc->Type, GetMemoryTypeUnicode(desc->Type),

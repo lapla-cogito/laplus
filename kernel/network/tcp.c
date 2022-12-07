@@ -4,7 +4,7 @@
  * @brief TCPプロトコルの定義が記述されたファイル
  *
  * @note TCP(Transmission Control
- * Protocol)はコネクション型の接続なのでデータを送信する際の制御機能が必要
+ * Protocol)は3WAYコネクション型の接続なのでデータを送信する際の制御機能が必要
  */
 #include "tcp.h"
 #include "benri.h"
@@ -112,9 +112,9 @@ struct tcp_pcb {
     uint32_t irs;
     uint16_t mtu;
     uint16_t mss;      /**最大セグメント長(Maximum Segment Size)*/
-    uint8_t buf[8192]; /* receive buffer */
+    uint8_t buf[8192]; /** receive buffer */
     cond_t cond;
-    struct queue_head queue; /* retransmit queue */
+    struct queue_head queue; /** retransmit queue */
     struct timeval tw_timer;
     struct tcp_pcb *parent;
     struct queue_head backlog;
@@ -236,7 +236,7 @@ static struct tcp_pcb *tcp_pcb_select(struct tcp_endpoint *local,
                                       struct tcp_endpoint *foreign) {
     struct tcp_pcb *pcb, *listen_pcb = NULL;
 
-    for(pcb = pcbs; pcb < tailof(pcbs); pcb++) {
+    for(pcb = pcbs; pcb < tailof(pcbs); ++pcb) {
         if((pcb->local.addr == IP_ADDR_ANY || pcb->local.addr == local->addr) &&
            pcb->local.port == local->port) {
             if(!foreign) { return pcb; }
@@ -246,7 +246,6 @@ static struct tcp_pcb *tcp_pcb_select(struct tcp_endpoint *local,
             }
             if(pcb->state == TCP_PCB_STATE_LISTEN) {
                 if(pcb->foreign.addr == IP_ADDR_ANY && pcb->foreign.port == 0) {
-                    /* LISTENed with wildcard foreign address/port */
                     listen_pcb = pcb;
                 }
             }
@@ -258,10 +257,8 @@ static struct tcp_pcb *tcp_pcb_select(struct tcp_endpoint *local,
 static struct tcp_pcb *tcp_pcb_get(int id) {
     struct tcp_pcb *pcb;
 
-    if(id < 0 || id >= (int)countof(pcbs)) {
-        /* out of range */
-        return NULL;
-    }
+    if(id < 0 || id >= (int)countof(pcbs)) { return NULL; } // out of range
+
     pcb = &pcbs[id];
     if(pcb->state == TCP_PCB_STATE_FREE) { return NULL; }
     return pcb;
@@ -269,7 +266,7 @@ static struct tcp_pcb *tcp_pcb_get(int id) {
 
 static int tcp_pcb_id(struct tcp_pcb *pcb) { return indexof(pcbs, pcb); }
 
-/**TCP再送*/
+/**TCPを再送する*/
 static int tcp_retransmit_queue_add(struct tcp_pcb *pcb, uint32_t seq,
                                     uint8_t flg, uint8_t *data, size_t len) {
     struct tcp_queue_entry *entry;
@@ -416,21 +413,15 @@ static void tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags,
     }
     switch(pcb->state) {
     case TCP_PCB_STATE_LISTEN:
-        /*
-         * first check for an RST
-         */
+        // first: cehck RST
         if(TCP_FLG_ISSET(flags, TCP_FLG_RST)) { return; }
-        /*
-         * second check for an ACK
-         */
+        // second: check ACK
         if(TCP_FLG_ISSET(flags, TCP_FLG_ACK)) {
             tcp_output_segment(seg->ack, 0, TCP_FLG_RST, 0, NULL, 0, local,
                                foreign);
             return;
         }
-        /*
-         * third check for an SYN
-         */
+        // third: check SYN
         if(TCP_FLG_ISSET(flags, TCP_FLG_SYN)) {
             /* ignore: security/compartment check */
             /* ignore: precedence check */
@@ -459,15 +450,12 @@ static void tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags,
                processing of SYN and ACK  should not be repeated */
             return;
         }
-        /*
-         * fourth other text or control
-         */
+        // fourth: other text or control
+
         /* drop segment */
         return;
     case TCP_PCB_STATE_SYN_SENT:
-        /*
-         * first check the ACK bit
-         */
+        // first: check the ACK bit
         if(TCP_FLG_ISSET(flags, TCP_FLG_ACK)) {
             if(seg->ack <= pcb->iss || seg->ack > pcb->snd.nxt) {
                 tcp_output_segment(seg->ack, 0, TCP_FLG_RST, 0, NULL, 0, local,
@@ -478,9 +466,7 @@ static void tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags,
                 acceptable = 1;
             }
         }
-        /*
-         * second check the RST bit
-         */
+        // second: chekc the RST bit
         if(TCP_FLG_ISSET(flags, TCP_FLG_RST)) {
             if(acceptable) {
                 errorf("connection reset");
@@ -493,9 +479,7 @@ static void tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags,
         /*
          * ignore: third check security and precedence
          */
-        /*
-         * fourth check the SYN bit
-         */
+        // fourth: check the SYN bit
         if(TCP_FLG_ISSET(flags, TCP_FLG_SYN)) {
             pcb->rcv.nxt = seg->seq + 1;
             pcb->irs = seg->seq;
@@ -737,7 +721,6 @@ static void tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags,
     case TCP_PCB_STATE_CLOSING:
     case TCP_PCB_STATE_LAST_ACK:
     case TCP_PCB_STATE_TIME_WAIT:
-        /* ignore segment text */
         break;
     }
 
@@ -749,7 +732,6 @@ static void tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags,
         case TCP_PCB_STATE_CLOSED:
         case TCP_PCB_STATE_LISTEN:
         case TCP_PCB_STATE_SYN_SENT:
-            /* drop segment */
             return;
         }
         pcb->rcv.nxt = seg->seq + 1;
@@ -885,10 +867,7 @@ int tcp_init() {
     return 0;
 }
 
-/*
- * TCP User Command (RFC793)
- */
-
+// TCP User Command (RFC793)
 int tcp_open_rfc793(struct tcp_endpoint *local, struct tcp_endpoint *foreign,
                     int active) {
     struct tcp_pcb *pcb;
@@ -975,10 +954,7 @@ int tcp_state(int id) {
     return state;
 }
 
-/*
- * TCP User Command (Socket)
- */
-
+// TCP User Command (Socket)
 int tcp_open() {
     struct tcp_pcb *pcb;
     int id;
@@ -1029,7 +1005,7 @@ int tcp_connect(int id, struct tcp_endpoint *foreign) {
         local.addr = iface->unicast;
     }
     if(!local.port) {
-        for(p = TCP_SOURCE_PORT_MIN; p <= TCP_SOURCE_PORT_MAX; p++) {
+        for(p = TCP_SOURCE_PORT_MIN; p <= TCP_SOURCE_PORT_MAX; ++p) {
             local.port = p;
             if(!tcp_pcb_select(&local, foreign)) {
                 debugf("dinamic assign srouce port: %d", ntoh16(local.port));
@@ -1063,6 +1039,7 @@ AGAIN:
     state = pcb->state;
     // waiting for state changed
     while(pcb->state == state) { cond_wait(&pcb->cond, &mutex); }
+
     if(pcb->state != TCP_PCB_STATE_ESTABLISHED) {
         if(pcb->state == TCP_PCB_STATE_SYN_RECEIVED) { goto AGAIN; }
         errorf("open error: %d", pcb->state);
@@ -1276,7 +1253,6 @@ RETRY:
     case TCP_PCB_STATE_CLOSE_WAIT:
         remain = sizeof(pcb->buf) - pcb->rcv.wnd;
         if(remain) { break; }
-        /* fall through */
     case TCP_PCB_STATE_CLOSING:
     case TCP_PCB_STATE_LAST_ACK:
     case TCP_PCB_STATE_TIME_WAIT:
@@ -1329,7 +1305,7 @@ int tcp_close(int id) {
         break;
     case TCP_PCB_STATE_FIN_WAIT1:
     case TCP_PCB_STATE_FIN_WAIT2:
-        errorf("connection closing");
+        errorf("connection closing...");
         mutex_unlock(&mutex);
         return -1;
     case TCP_PCB_STATE_CLOSE_WAIT:
@@ -1342,7 +1318,7 @@ int tcp_close(int id) {
     case TCP_PCB_STATE_CLOSING:
     case TCP_PCB_STATE_LAST_ACK:
     case TCP_PCB_STATE_TIME_WAIT:
-        errorf("connection closing");
+        errorf("connection closing...");
         mutex_unlock(&mutex);
         return -1;
     default:

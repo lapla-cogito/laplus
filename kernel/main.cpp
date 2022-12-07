@@ -234,6 +234,7 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     InitializeKeyboard();
     InitializeMouse();
 
+    /**ネットワークドライバの初期化*/
     net_init();
     e1000_probe();
     net_run();

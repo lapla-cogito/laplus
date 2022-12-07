@@ -20,11 +20,11 @@
 
 #define timeval_add_usec(x, y)                                                 \
     do {                                                                       \
-        (x)->tv_sec += y / div_usec;                                           \
-        (x)->tv_usec += y % div_usec;                                          \
-        if((x)->tv_usec >= div_usec) {                                         \
+        (x)->tv_sec += y / 1000000;                                            \
+        (x)->tv_usec += y % 1000000;                                           \
+        if((x)->tv_usec >= 1000000) {                                          \
             (x)->tv_sec += 1;                                                  \
-            (x)->tv_usec -= div_nsec                                           \
+            (x)->tv_usec -= 1000000;                                           \
         }                                                                      \
     } while(0);
 
